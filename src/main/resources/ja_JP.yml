@@ -1,0 +1,12 @@
+gui:
+  title: "{0} ({1})" # Profession (name or UUID)
+  ingredient-stock: "在庫: {0}"
+  scroll-up-arrow: "↑"
+  scroll-down-arrow: "↓"
+  recipe-selected: "選択中"
+  recipe-not-selected: "選択されていません"
+  recipe-selected-lore-1: "選択してbox stickを持って殴ると"
+  recipe-selected-lore-2: "一気に限界まで取引できます。"
+  result-out-of-stock: "売り切れ！"
+  result-name-out-of-stock: "{0} (売り切れ！)"
+result-times: "{0}回交易し、{2}を{1}個手に入れました。"

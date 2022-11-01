@@ -1,0 +1,10 @@
+name: BoxTradeStick
+version: '${projectVersion}'
+main: net.okocraft.boxtradestick.BoxTradeStickPlugin
+api-version: 1.19
+depend:
+  - Box
+
+permissions:
+  boxtradestick.trade:
+    default: true
