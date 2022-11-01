@@ -12,7 +12,9 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 
 public class PlayerListener implements Listener {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    private boolean onEntityDamageByEntityEvent = false;
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerAttackVillager(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player player)) {
             return;
@@ -27,6 +29,12 @@ public class PlayerListener implements Listener {
         }
 
         event.setCancelled(true);
+
+        onEntityDamageByEntityEvent = true;
+        if (!new PlayerInteractEntityEvent(player, villager).callEvent()) {
+            return;
+        }
+        onEntityDamageByEntityEvent = false;
 
         MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
         int selectedOfferIndex = gui.getCurrentSelected();
@@ -44,8 +52,11 @@ public class PlayerListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        if (onEntityDamageByEntityEvent) {
+            return;
+        }
         if (event.getRightClicked() instanceof AbstractVillager villager) {
             Player player = event.getPlayer();
             if (BoxUtil.checkPlayerCondition(player, "boxtradestick.trade")) {
