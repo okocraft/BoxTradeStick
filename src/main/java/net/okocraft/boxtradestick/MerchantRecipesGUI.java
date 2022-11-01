@@ -12,7 +12,6 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.transaction.InventoryTransaction;
 import net.okocraft.box.api.transaction.TransactionResult;
-import net.okocraft.box.api.transaction.TransactionResultType;
 import net.okocraft.box.storage.api.factory.item.BoxItemFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -143,18 +142,19 @@ public class MerchantRecipesGUI implements InventoryHolder {
         return ItemUtil.create(trader.locale(), Material.ARROW, name);
     }
 
-    public void onClick(int slot) {
+    public void onClick(int slot, boolean shiftClick) {
         int column = slot % 9;
         int row = slot / 9;
 
-        int recipeIndex= row + scroll;
+        int recipeIndex = row + scroll;
 
         if (column == 0) {
             if (recipeIndex < merchant.getRecipeCount()) {
                 setCurrentSelected(recipeIndex != getCurrentSelected() ? recipeIndex : -1);
             }
         } else if (column == 5) {
-            boolean tradeSuccess = trade(recipeIndex);
+            boolean tradeSuccess = shiftClick ? tradeForMaxUses(recipeIndex) > 0 : trade(recipeIndex);
+
             if (merchant instanceof AbstractVillager villager) {
                 if (tradeSuccess) {
                     trader.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
@@ -164,8 +164,14 @@ public class MerchantRecipesGUI implements InventoryHolder {
             }
         } else if (column == 7) {
             if (row == 1) {
+                if (shiftClick) {
+                    scroll = getMaxScroll() - 1;
+                }
                 scrollUp();
             } else if (row == 4) {
+                if (shiftClick) {
+                    scroll = 1;
+                }
                 scrollDown();
             }
         }
