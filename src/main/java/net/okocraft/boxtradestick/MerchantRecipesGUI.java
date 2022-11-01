@@ -11,6 +11,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.transaction.InventoryTransaction;
+import net.okocraft.box.api.transaction.TransactionResult;
+import net.okocraft.box.api.transaction.TransactionResultType;
 import net.okocraft.box.storage.api.factory.item.BoxItemFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -148,7 +150,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
         int recipeIndex= row + scroll;
 
         if (column == 0) {
-            if (row < merchant.getRecipeCount()) {
+            if (recipeIndex < merchant.getRecipeCount()) {
                 setCurrentSelected(recipeIndex != getCurrentSelected() ? recipeIndex : -1);
             }
         } else if (column == 5) {
@@ -170,7 +172,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     public int tradeForMaxUses(int recipeIndex) {
-        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade0")) {
+        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade")) {
             return 0;
         }
 
@@ -193,7 +195,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     public boolean trade(int recipeIndex) {
-        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade0")) {
+        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade")) {
             return false;
         }
 
@@ -242,10 +244,20 @@ public class MerchantRecipesGUI implements InventoryHolder {
                     PlainTextComponentSerializer.plainText().serialize(resultBukkit.displayName()),
                     -1
             );
+            TransactionResult transaction = InventoryTransaction.withdraw(
+                    trader.getInventory(),
+                    resultBoxItem,
+                    resultBukkit.getAmount()
+            );
             ItemStack drop = resultBukkit.clone();
-            drop.setAmount(drop.getAmount() - InventoryTransaction
-                    .withdraw(trader.getInventory(), resultBoxItem, resultBukkit.getAmount()).getAmount());
-            trader.getWorld().dropItemNaturally(trader.getLocation(), drop);
+            if (transaction.getType().isModified()) {
+                if (drop.getAmount() != transaction.getAmount()) {
+                    drop.setAmount(drop.getAmount() - transaction.getAmount());
+                    drop(trader, drop);
+                }
+            } else {
+                drop(trader, drop);
+            }
         } else {
             // stock is definitely present.
             BoxUtil.getStock(trader).ifPresent(stock -> stock.increase(result.get(), resultBukkit.getAmount()));
@@ -253,6 +265,13 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
         NMSUtil.processTrade(trader, merchant, merchantOffer, event);
         return true;
+    }
+
+    private static void drop(Player player, ItemStack item) {
+        ItemStack hand = player.getInventory().getItemInMainHand().clone();
+        player.getInventory().setItemInMainHand(item);
+        player.dropItem(true);
+        player.getInventory().setItemInMainHand(hand);
     }
 
     public int getCurrentSelected() {
