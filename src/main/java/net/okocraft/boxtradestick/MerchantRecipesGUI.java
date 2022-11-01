@@ -15,7 +15,6 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.okocraft.box.api.BoxProvider;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.transaction.InventoryTransaction;
-import net.okocraft.box.feature.gui.internal.lang.Displays;
 import net.okocraft.box.storage.api.factory.item.BoxItemFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -51,8 +50,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
         loreCreator = item -> BoxProvider.get().getItemManager()
                 .getBoxItem(item)
                 .flatMap(i -> BoxUtil.getStock(trader).map(stock -> stock.getAmount(i)))
-                .map(Displays.STORAGE_MODE_CURRENT_STOCK::apply)
-                .orElse(Displays.STORAGE_MODE_CURRENT_STOCK.apply(0));
+                .map(Translatables.GUI_CURRENT_STOCK::apply)
+                .orElse(Translatables.GUI_CURRENT_STOCK.apply(0));
 
         update();
     }

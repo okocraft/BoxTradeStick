@@ -26,6 +26,10 @@ public final class Translatables {
                     .args(Component.translatable().key(item))
                     .color(NamedTextColor.YELLOW);
 
+    public static final SingleArgument<Integer> GUI_CURRENT_STOCK =
+            stock -> nonItalic("gui.current-stock")
+                    .args(Component.text(stock).color(NamedTextColor.AQUA));
+
     public static final DoubleArgument<Integer, ItemStack> RESULT_TIMES =
             (traded, result) -> Component.translatable("result-times", NamedTextColor.YELLOW).args(
                     Component.text(traded),
