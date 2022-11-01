@@ -4,15 +4,11 @@ import io.papermc.paper.event.player.PlayerPurchaseEvent;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.okocraft.box.api.BoxProvider;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.transaction.InventoryTransaction;
 import net.okocraft.box.storage.api.factory.item.BoxItemFactory;
@@ -40,20 +36,13 @@ public class MerchantRecipesGUI implements InventoryHolder {
     private int scroll = 0;
     private final Player trader;
     private final Merchant merchant;
-    private final Function<ItemStack, Component> loreCreator;
 
     public MerchantRecipesGUI(Player trader, Merchant merchant) {
         this.inventory = Bukkit.createInventory(this, 54, Translatables.GUI_TITLE.apply(merchant));
         this.trader = trader;
         this.merchant = merchant;
 
-        loreCreator = item -> BoxProvider.get().getItemManager()
-                .getBoxItem(item)
-                .flatMap(i -> BoxUtil.getStock(trader).map(stock -> stock.getAmount(i)))
-                .map(Translatables.GUI_CURRENT_STOCK::apply)
-                .orElse(Translatables.GUI_CURRENT_STOCK.apply(0));
-
-        update();
+        initialize();
     }
 
     public int getMaxScroll() {
@@ -103,7 +92,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
             if (j == 0) {
                 recipe.adjust(ingredient);
             }
-            ItemUtil.lore(trader.locale(), ingredient, Collections.singletonList(loreCreator.apply(ingredient)));
+
+            ItemUtil.loreOfStock(trader, ingredient, ingredient, false);
             inventory.setItem(row * 9 + 2 + j, ingredient);
         }
 
@@ -117,11 +107,12 @@ public class MerchantRecipesGUI implements InventoryHolder {
                     Translatables.GUI_RESULT_NAME_OUT_OF_STOCK.apply(recipe.getResult()))
             );
         }
-        ItemUtil.lore(trader.locale(), result, Collections.singletonList(loreCreator.apply(recipe.getResult())));
+
+        ItemUtil.loreOfStock(trader, recipe.getResult(), result, true);
         inventory.setItem(row * 9 + 5, result);
     }
 
-    public void update() {
+    public void initialize() {
         ItemStack[] filled = inventory.getContents();
         Arrays.fill(filled, createNonButton());
         getInventory().setContents(filled);
@@ -129,6 +120,10 @@ public class MerchantRecipesGUI implements InventoryHolder {
         inventory.setItem(16, createArrow(Translatables.GUI_SCROLL_UP_ARROW));
         inventory.setItem(43, createArrow(Translatables.GUI_SCROLL_DOWN_ARROW));
 
+        update();
+    }
+
+    public void update() {
         for (int row = 0; row < Math.min(merchant.getRecipeCount(), 6); row++) {
             updateTradeItem(row);
         }
@@ -143,13 +138,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private ItemStack createArrow(Component name) {
-        return ItemUtil.create(
-                trader.locale(),
-                Material.ARROW,
-                name.decorate(TextDecoration.BOLD)
-                        .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
-                        .color(NamedTextColor.GOLD)
-        );
+        return ItemUtil.create(trader.locale(), Material.ARROW, name);
     }
 
     public void onClick(int slot) {
@@ -191,13 +180,13 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
         MerchantRecipe merchantOffer = merchant.getRecipe(recipeIndex);
         int traded = 0;
-        for (int i = merchantOffer.getUses(); i <= merchantOffer.getMaxUses(); i++) {
+        for (int i = merchantOffer.getUses(); i < merchantOffer.getMaxUses(); i++) {
             if (trade0(merchantOffer)) {
                 traded++;
             }
         }
         if (traded > 0) {
-            updateTradeItem(recipeIndex - scroll);
+            update();
             trader.sendActionBar(Translatables.RESULT_TIMES.apply(traded, merchantOffer.getResult()));
         }
         return traded;
@@ -213,7 +202,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
         }
 
         if (trade0(merchant.getRecipe(recipeIndex))) {
-            updateTradeItem(recipeIndex - scroll);
+            update();
             return true;
         } else {
             return false;
@@ -221,7 +210,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private boolean trade0(MerchantRecipe merchantOffer) {
-        if (merchantOffer.getUses() > merchantOffer.getMaxUses()) {
+        if (merchantOffer.getUses() >= merchantOffer.getMaxUses()) {
             return false;
         }
 

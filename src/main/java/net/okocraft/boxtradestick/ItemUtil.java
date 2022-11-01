@@ -3,9 +3,11 @@ package net.okocraft.boxtradestick;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.StreamSupport;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +16,22 @@ import org.jetbrains.annotations.Nullable;
 public final class ItemUtil {
 
     private ItemUtil() {}
+
+    public static void loreOfStock(Player trader, ItemStack itemToCheck, ItemStack itemToApply, boolean useInventoryIfInvalidItem) {
+        List<Component> lore = new ArrayList<>();
+        if (BoxUtil.getBoxItem(itemToCheck).isPresent()) {
+            lore.add(Translatables.GUI_CURRENT_STOCK.apply(trader, itemToCheck));
+        } else if (useInventoryIfInvalidItem) {
+            int stock = StreamSupport.stream(trader.getInventory().spliterator(), false)
+                    .filter(itemToCheck::isSimilar)
+                    .map(ItemStack::getAmount)
+                    .reduce(Integer::sum).orElse(0);
+            lore.add(Translatables.GUI_CURRENT_STOCK_RAW.apply(stock));
+        }
+        if (!lore.isEmpty()) {
+            lore(trader.locale(), itemToApply, lore);
+        }
+    }
 
     public static void lore(Locale locale, @NotNull ItemStack item, @Nullable List<Component> lore) {
         ItemMeta meta = item.getItemMeta();

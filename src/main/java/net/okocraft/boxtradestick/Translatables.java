@@ -1,13 +1,17 @@
 package net.okocraft.boxtradestick;
 
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.okocraft.box.api.BoxProvider;
 import net.okocraft.box.api.message.argument.DoubleArgument;
 import net.okocraft.box.api.message.argument.SingleArgument;
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.WanderingTrader;
 import org.bukkit.inventory.ItemStack;
@@ -26,10 +30,17 @@ public final class Translatables {
                     .args(Component.translatable().key(item))
                     .color(NamedTextColor.YELLOW);
 
-    public static final SingleArgument<Integer> GUI_CURRENT_STOCK =
+    public static final SingleArgument<Integer> GUI_CURRENT_STOCK_RAW =
             stock -> nonItalic("gui.current-stock")
                     .args(Component.text(stock).color(NamedTextColor.AQUA))
                     .color(NamedTextColor.GRAY);
+
+    public static final DoubleArgument<Player, ItemStack> GUI_CURRENT_STOCK =
+            (player, item) -> BoxProvider.get().getItemManager()
+                    .getBoxItem(item)
+                    .flatMap(i -> BoxUtil.getStock(player).map(stock -> stock.getAmount(i)))
+                    .map(Translatables.GUI_CURRENT_STOCK_RAW::apply)
+                    .orElse(Translatables.GUI_CURRENT_STOCK_RAW.apply(0));
 
     public static final DoubleArgument<Integer, ItemStack> RESULT_TIMES =
             (traded, result) -> Component.translatable("result-times", NamedTextColor.YELLOW).args(
@@ -45,9 +56,11 @@ public final class Translatables {
             );
 
     public static final Component GUI_SCROLL_UP_ARROW = nonItalic("gui.scroll-up-arrow")
+            .decorate(TextDecoration.BOLD)
             .color(NamedTextColor.GOLD);
 
     public static final Component GUI_SCROLL_DOWN_ARROW = nonItalic("gui.scroll-down-arrow")
+            .decorate(TextDecoration.BOLD)
             .color(NamedTextColor.GOLD);
 
     public static final Component GUI_RECIPE_SELECTED = nonItalic("gui.recipe-selected");
