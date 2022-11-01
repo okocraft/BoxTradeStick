@@ -1,6 +1,6 @@
 gui:
   title: "{0} ({1})" # Profession (name or UUID)
-  ingredient-stock: "Stock: {0}"
+  current-stock: "Stock: {0}"
   scroll-up-arrow: "↑"
   scroll-down-arrow: "↓"
   recipe-selected: "Selected"
