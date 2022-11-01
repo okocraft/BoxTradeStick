@@ -17,8 +17,14 @@ public final class ItemUtil {
 
     private ItemUtil() {}
 
-    public static void loreOfStock(Player trader, ItemStack itemToCheck, ItemStack itemToApply, boolean useInventoryIfInvalidItem) {
-        List<Component> lore = new ArrayList<>();
+    public static void addLoreOfStock(Player trader, ItemStack itemToCheck, ItemStack itemToApply, boolean useInventoryIfInvalidItem) {
+        List<Component> lore = itemToApply.lore();
+        if (lore == null) {
+            lore = new ArrayList<>();
+        } else {
+            lore = new ArrayList<>(lore);
+        }
+
         if (BoxUtil.getBoxItem(itemToCheck).isPresent()) {
             lore.add(Translatables.GUI_CURRENT_STOCK.apply(trader, itemToCheck));
         } else if (useInventoryIfInvalidItem) {
@@ -28,9 +34,7 @@ public final class ItemUtil {
                     .reduce(Integer::sum).orElse(0);
             lore.add(Translatables.GUI_CURRENT_STOCK_RAW.apply(stock));
         }
-        if (!lore.isEmpty()) {
-            lore(trader.locale(), itemToApply, lore);
-        }
+        lore(trader.locale(), itemToApply, lore);
     }
 
     public static void lore(Locale locale, @NotNull ItemStack item, @Nullable List<Component> lore) {

@@ -42,6 +42,11 @@ public final class Translatables {
                     .map(Translatables.GUI_CURRENT_STOCK_RAW::apply)
                     .orElse(Translatables.GUI_CURRENT_STOCK_RAW.apply(0));
 
+    public static final DoubleArgument<Integer, Integer> GUI_PRICE_DIFF =
+            (originalPrice, price) -> nonItalic("gui.price-diff")
+                    .args(Component.text(originalPrice, NamedTextColor.AQUA), Component.text(price, NamedTextColor.AQUA))
+                    .color(NamedTextColor.GRAY);
+
     public static final DoubleArgument<Integer, ItemStack> RESULT_TIMES =
             (traded, result) -> Component.translatable("result-times", NamedTextColor.YELLOW).args(
                     Component.text(traded),

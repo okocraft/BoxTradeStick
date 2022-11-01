@@ -1,5 +1,6 @@
 gui:
   title: "{0} ({1})" # Profession (name or UUID)
+  price-diff: "{0} → {1}"
   current-stock: "在庫: {0}"
   scroll-up-arrow: "↑"
   scroll-down-arrow: "↓"

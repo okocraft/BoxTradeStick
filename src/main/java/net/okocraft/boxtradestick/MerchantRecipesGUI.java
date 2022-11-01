@@ -89,12 +89,20 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
         MerchantRecipe recipe = merchant.getRecipe(recipeIndex);
         for (int j = 0; j < recipe.getIngredients().size(); j++) {
-            ItemStack ingredient = recipe.getIngredients().get(j).clone();
+            ItemStack originalIngredient = recipe.getIngredients().get(j);
+            ItemStack ingredient = originalIngredient.clone();
+
             if (j == 0) {
+                int originalPrice = ingredient.getAmount();
                 recipe.adjust(ingredient);
+                int currentPrice = ingredient.getAmount();
+                if (originalPrice != currentPrice) {
+                    ItemUtil.lore(trader.locale(), ingredient,
+                            List.of(Translatables.GUI_PRICE_DIFF.apply(originalPrice, currentPrice)));
+                }
             }
 
-            ItemUtil.loreOfStock(trader, ingredient, ingredient, false);
+            ItemUtil.addLoreOfStock(trader, originalIngredient, ingredient, false);
             inventory.setItem(row * 9 + 2 + j, ingredient);
         }
 
@@ -109,7 +117,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
             );
         }
 
-        ItemUtil.loreOfStock(trader, recipe.getResult(), result, true);
+        ItemUtil.addLoreOfStock(trader, recipe.getResult(), result, true);
         inventory.setItem(row * 9 + 5, result);
     }
 
