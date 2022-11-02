@@ -30,6 +30,11 @@ public final class Translatables {
                     .args(Component.translatable().key(item))
                     .color(NamedTextColor.YELLOW);
 
+    public static final SingleArgument<ItemStack> GUI_RESULT_BULK_TRADE =
+            item -> nonItalic("gui.result-bulk-trade")
+                    .args(Component.translatable().key(item).color(NamedTextColor.AQUA))
+                    .color(NamedTextColor.GOLD);
+
     public static final SingleArgument<Integer> GUI_CURRENT_STOCK_RAW =
             stock -> nonItalic("gui.current-stock")
                     .args(Component.text(stock).color(NamedTextColor.AQUA))

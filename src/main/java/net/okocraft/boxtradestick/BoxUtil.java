@@ -57,6 +57,27 @@ public final class BoxUtil {
         return true;
     }
 
+    public static int calcConsumedAmount(Player player, List<ItemStack> items) {
+        var stock = getStock(player);
+        if (stock.isEmpty()) {
+            return 0;
+        }
+
+        items = new ArrayList<>(items);
+        items.removeIf(i -> i.getType() == Material.AIR);
+
+        int consumingAmount = Integer.MAX_VALUE;
+        for (ItemStack ingredient: items) {
+            var boxItem = Optional.ofNullable(ingredient).flatMap(BoxUtil::getBoxItem);
+            if (boxItem.isEmpty()) {
+                return 0;
+            }
+            consumingAmount = Math.min(consumingAmount, stock.get().getAmount(boxItem.get()) / ingredient.getAmount());
+        }
+
+        return consumingAmount;
+    }
+
     public static Optional<BoxItem> getBoxItem(ItemStack item) {
         return BoxProvider.get().getItemManager().getBoxItem(item);
     }

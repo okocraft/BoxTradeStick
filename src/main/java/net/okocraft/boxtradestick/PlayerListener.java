@@ -88,7 +88,7 @@ public class PlayerListener implements Listener {
         if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
                 && event.getClickedInventory() != null) {
             event.setCancelled(true);
-            gui.onClick(event.getSlot(), event.isShiftClick());
+            gui.onClick(event.getSlot());
         }
     }
 

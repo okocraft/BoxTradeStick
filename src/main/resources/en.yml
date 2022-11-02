@@ -10,5 +10,6 @@ gui:
   recipe-selected-lore-2: "with holding box stick after select offer."
   result-out-of-stock: "Out of stock!"
   result-name-out-of-stock: "{0} (Out of stock!)"
+  result-bulk-trade: "Bulk trade {0}"
 result-times: "Traded {0} times and got {1} {2}s"
 hit-trading-cooldown: "Hit trading is now in cooldown for {0} second."
