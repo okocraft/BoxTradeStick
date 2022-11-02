@@ -11,3 +11,4 @@ gui:
   result-out-of-stock: "売り切れ！"
   result-name-out-of-stock: "{0} (売り切れ！)"
 result-times: "{0}回交易し、{2}を{1}個手に入れました。"
+hit-trading-cooldown: "殴り交易はクールダウン中です。(あと{0}秒)"

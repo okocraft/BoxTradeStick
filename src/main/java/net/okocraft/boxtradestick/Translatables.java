@@ -35,6 +35,11 @@ public final class Translatables {
                     .args(Component.text(stock).color(NamedTextColor.AQUA))
                     .color(NamedTextColor.GRAY);
 
+    public static final SingleArgument<Long> HIT_TRADING_COOLDOWN =
+            cooldown -> Component.translatable("hit-trading-cooldown")
+                    .args(Component.text(((double) cooldown) / 1000D).color(NamedTextColor.AQUA))
+                    .color(NamedTextColor.YELLOW);
+
     public static final DoubleArgument<Player, ItemStack> GUI_CURRENT_STOCK =
             (player, item) -> BoxProvider.get().getItemManager()
                     .getBoxItem(item)

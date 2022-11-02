@@ -1,5 +1,8 @@
 package net.okocraft.boxtradestick;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Player;
@@ -9,10 +12,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerListener implements Listener {
 
+    private final Map<UUID, Long> hitTradeCooldown = new HashMap<>();
     private boolean onEntityDamageByEntityEvent = false;
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        hitTradeCooldown.remove(event.getPlayer().getUniqueId());
+    }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerAttackVillager(EntityDamageByEntityEvent event) {
@@ -30,6 +40,12 @@ public class PlayerListener implements Listener {
 
         event.setCancelled(true);
 
+        long cooldown = hitTradeCooldown.getOrDefault(player.getUniqueId(), 0L) + 1000L - System.currentTimeMillis();
+        if (0 < cooldown) {
+            player.sendActionBar(Translatables.HIT_TRADING_COOLDOWN.apply(cooldown));
+            return;
+        }
+
         onEntityDamageByEntityEvent = true;
         if (!new PlayerInteractEntityEvent(player, villager).callEvent()) {
             return;
@@ -46,6 +62,7 @@ public class PlayerListener implements Listener {
         int traded = gui.tradeForMaxUses(gui.getCurrentSelected());
         if (traded > 0) {
             player.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
+            hitTradeCooldown.put(player.getUniqueId(), System.currentTimeMillis());
         } else {
             player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             player.sendActionBar(Translatables.OUT_OF_STOCK);
