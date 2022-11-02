@@ -83,20 +83,9 @@ public final class BoxUtil {
     }
 
     public static BoxStickItem getBoxStickItem() {
-        try {
-            var stickFeature = BOX.getFeatures().stream()
-                    .filter(f -> f instanceof StickFeature)
-                    .map(f -> (StickFeature) f)
-                    .findFirst()
-                    .orElseThrow(() -> new Exception("Stick feature is not loaded"));
-
-            // crying for the fact we need to reflect field;;
-            var boxStickItemField = stickFeature.getClass().getDeclaredField("boxStickItem");
-            boxStickItemField.setAccessible(true);
-            return (BoxStickItem) boxStickItemField.get(stickFeature);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to load boxStickItem.", e);
-        }
+        return BOX.getFeature(StickFeature.class)
+                .orElseThrow(() -> new IllegalStateException("Failed to load boxStickItem."))
+                .getBoxStickItem();
     }
 
     public static boolean checkPlayerCondition(@NotNull Player player, @NotNull String permissionNode) {
