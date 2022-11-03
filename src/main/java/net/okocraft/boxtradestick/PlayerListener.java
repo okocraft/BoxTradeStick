@@ -6,11 +6,13 @@ import java.util.UUID;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -52,6 +54,8 @@ public class PlayerListener implements Listener {
         }
         onEntityDamageByEntityEvent = false;
 
+        NMSUtil.startTrading(villager, player);
+
         MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
         int selectedOfferIndex = gui.getCurrentSelected();
         if (selectedOfferIndex == -1) {
@@ -67,20 +71,29 @@ public class PlayerListener implements Listener {
             player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             player.sendActionBar(Translatables.OUT_OF_STOCK);
         }
+
+        NMSUtil.stopTrading(villager);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        if (onEntityDamageByEntityEvent) {
+        if (onEntityDamageByEntityEvent || !(event.getRightClicked() instanceof AbstractVillager abstractVillager)) {
             return;
         }
-        if (event.getRightClicked() instanceof AbstractVillager villager) {
-            Player player = event.getPlayer();
-            if (BoxUtil.checkPlayerCondition(player, "boxtradestick.trade")) {
-                player.openInventory(new MerchantRecipesGUI(player, villager).getInventory());
-                event.setCancelled(true);
-            }
+
+        Player player = event.getPlayer();
+        if (!BoxUtil.checkPlayerCondition(player, "boxtradestick.trade")) {
+            return;
         }
+
+        event.setCancelled(true);
+
+        if (abstractVillager instanceof Villager villager
+                && !NMSUtil.simulateMobInteract(player, villager, event.getHand())) {
+            return;
+        }
+
+        player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
@@ -89,6 +102,13 @@ public class PlayerListener implements Listener {
                 && event.getClickedInventory() != null) {
             event.setCancelled(true);
             gui.onClick(event.getSlot());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui) {
+            gui.onClose();
         }
     }
 

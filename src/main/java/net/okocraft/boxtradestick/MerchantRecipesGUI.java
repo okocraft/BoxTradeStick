@@ -36,7 +36,12 @@ public class MerchantRecipesGUI implements InventoryHolder {
         this.inventory = Bukkit.createInventory(this, 54, Translatables.GUI_TITLE.apply(merchant));
         this.trader = trader;
         this.merchant = merchant;
+
         initialize();
+    }
+
+    public void onClose() {
+        NMSUtil.stopTrading(merchant);
     }
 
     @Override
