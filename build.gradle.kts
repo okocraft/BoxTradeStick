@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.okocraft.boxtradestick"
-version = "1.0"
+version = "1.1"
 
 repositories {
     mavenCentral()
