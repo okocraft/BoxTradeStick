@@ -15,6 +15,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class PlayerListener implements Listener {
 
@@ -54,7 +55,9 @@ public class PlayerListener implements Listener {
         }
         onEntityDamageByEntityEvent = false;
 
-        NMSUtil.startTrading(villager, player);
+        if (!NMSUtil.simulateMobInteract(player, villager, EquipmentSlot.HAND)) {
+            return;
+        }
 
         MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
         int selectedOfferIndex = gui.getCurrentSelected();
