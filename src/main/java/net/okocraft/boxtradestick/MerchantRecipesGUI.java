@@ -44,6 +44,10 @@ public class MerchantRecipesGUI implements InventoryHolder {
         NMSUtil.stopTrading(merchant);
     }
 
+    public Merchant getMerchant() {
+        return this.merchant;
+    }
+
     @Override
     public @NotNull Inventory getInventory() {
         return inventory;

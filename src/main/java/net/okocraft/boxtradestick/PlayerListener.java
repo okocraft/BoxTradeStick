@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
@@ -16,6 +17,8 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.Merchant;
 
 public class PlayerListener implements Listener {
 
@@ -35,6 +38,10 @@ public class PlayerListener implements Listener {
 
         if (!(event.getEntity() instanceof AbstractVillager villager)) {
             return;
+        }
+
+        if (!isTrading(villager)) {
+            NMSUtil.stopTrading(villager);
         }
 
         if (!BoxUtil.checkPlayerCondition(player, "boxtradestick.trade")) {
@@ -84,6 +91,10 @@ public class PlayerListener implements Listener {
             return;
         }
 
+        if (!isTrading(abstractVillager)) {
+            NMSUtil.stopTrading(abstractVillager);
+        }
+
         Player player = event.getPlayer();
         if (!BoxUtil.checkPlayerCondition(player, "boxtradestick.trade")) {
             return;
@@ -113,6 +124,26 @@ public class PlayerListener implements Listener {
         if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui) {
             gui.onClose();
         }
+    }
+
+    private boolean isTrading(Merchant merchant) {
+        if (!(merchant instanceof AbstractVillager villager)) {
+            return false;
+        }
+
+        HumanEntity trader = merchant.getTrader();
+        if (trader == null) {
+            return false;
+        }
+
+        Inventory inv = trader.getOpenInventory().getTopInventory();
+        if (inv.getHolder() instanceof MerchantRecipesGUI gui) {
+            return gui.getMerchant().equals(merchant);
+        } else if (inv.getHolder() instanceof AbstractVillager villager1) {
+            return villager.equals(villager1);
+        }
+
+        return false;
     }
 
 }
