@@ -77,14 +77,14 @@ public class MerchantRecipesGUI implements InventoryHolder {
         if (recipeIndex == getCurrentSelected()) {
             inventory.setItem(row * 9, ItemUtil.create(
                     trader.locale(),
-                    Material.GREEN_WOOL,
+                    Material.LIME_WOOL,
                     Translatables.GUI_RECIPE_SELECTED,
                     Translatables.GUI_RECIPE_SELECTED_LORE
             ));
         } else {
             inventory.setItem(row * 9, ItemUtil.create(
                     trader.locale(),
-                    Material.RED_WOOL,
+                    Material.RED_STAINED_GLASS,
                     Translatables.GUI_RECIPE_NOT_SELECTED,
                     Translatables.GUI_RECIPE_SELECTED_LORE
             ));
