@@ -7,23 +7,23 @@ plugins {
 }
 
 group = "net.okocraft.boxtradestick"
-version = "1.4"
+version = "1.5"
 
 repositories {
     mavenCentral()
     maven(url = "https://papermc.io/repo/repository/maven-public/")
-    maven(url = "https://okocraft.github.io/Box/maven/")
+    maven(url = "https://okocraft.github.io/Box/maven-snapshot/")
 }
 
 dependencies {
-    paperDevBundle("1.19.2-R0.1-SNAPSHOT")
+    paperDevBundle("1.19.3-R0.1-SNAPSHOT")
 
     implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.0")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
 
-    compileOnly("net.okocraft.box:box-api:5.0.0-rc.6")
-    compileOnly("net.okocraft.box:box-storage-api:5.0.0-rc.6")
-    compileOnly("net.okocraft.box:box-stick-feature:5.0.0-rc.6")
+    compileOnly("net.okocraft.box:box-api:5.1.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-storage-api:5.1.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-stick-feature:5.1.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
