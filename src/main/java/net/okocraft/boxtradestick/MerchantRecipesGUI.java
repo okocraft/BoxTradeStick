@@ -259,7 +259,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
         if (ingredients.size() >= 1) {
             ingredients.set(0, merchantOffer.getAdjustedIngredient1());
         }
-        if (!BoxUtil.tryConsumingStockMulti(trader, ingredients)) {
+        var cause = new BoxUtil.Trade(trader, merchantOffer);
+        if (!BoxUtil.tryConsumingStockMulti(trader, ingredients, cause)) {
             return false;
         }
 
@@ -289,7 +290,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
             }
         } else {
             // stock is definitely present.
-            BoxUtil.getStock(trader).ifPresent(stock -> stock.increase(result.get(), resultBukkit.getAmount()));
+            BoxUtil.getStock(trader).ifPresent(stock -> stock.increase(result.get(), resultBukkit.getAmount(), cause));
         }
 
         NMSUtil.processTrade(trader, merchant, merchantOffer, event);
