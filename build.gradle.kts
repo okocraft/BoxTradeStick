@@ -21,9 +21,9 @@ dependencies {
     implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.0")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
 
-    compileOnly("net.okocraft.box:box-api:5.1.0-SNAPSHOT")
-    compileOnly("net.okocraft.box:box-storage-api:5.1.0-SNAPSHOT")
-    compileOnly("net.okocraft.box:box-stick-feature:5.1.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-api:5.2.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-storage-api:5.2.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-stick-feature:5.2.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
