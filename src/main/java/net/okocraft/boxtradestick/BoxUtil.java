@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.api.BoxProvider;
+import net.okocraft.box.api.event.stockholder.stock.StockEvent;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.model.stock.StockHolder;
 import net.okocraft.box.feature.stick.StickFeature;
@@ -14,6 +15,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.NotNull;
 
 public final class BoxUtil {
@@ -32,7 +34,7 @@ public final class BoxUtil {
         return Optional.of(playerMap.get(player).getCurrentStockHolder());
     }
 
-    public static boolean tryConsumingStockMulti(Player player, List<ItemStack> items) {
+    public static boolean tryConsumingStockMulti(Player player, List<ItemStack> items, Trade cause) {
         var stock = getStock(player);
         if (stock.isEmpty()) {
             return false;
@@ -53,7 +55,10 @@ public final class BoxUtil {
             requiredItems.put(boxItem.get(), ingredient.getAmount());
         }
 
-        requiredItems.forEach(stock.get()::decrease);
+        for (var entry : requiredItems.entrySet()) {
+            stock.get().decrease(entry.getKey(), entry.getValue(), cause);
+        }
+
         return true;
     }
 
@@ -106,4 +111,10 @@ public final class BoxUtil {
                 || getBoxStickItem().check(player.getInventory().getItemInMainHand());
     }
 
+    public record Trade(@NotNull Player trader, @NotNull MerchantRecipe merchantRecipe) implements StockEvent.Cause {
+        @Override
+        public @NotNull String name() {
+            return "trade";
+        }
+    }
 }
