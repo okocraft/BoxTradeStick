@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.api.BoxProvider;
 import net.okocraft.box.api.event.stockholder.stock.StockEvent;
 import net.okocraft.box.api.model.item.BoxItem;
@@ -19,8 +18,6 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.NotNull;
 
 public final class BoxUtil {
-
-    private static final BoxAPI BOX = BoxProvider.get();
 
     private BoxUtil() {}
 
@@ -88,7 +85,7 @@ public final class BoxUtil {
     }
 
     public static BoxStickItem getBoxStickItem() {
-        return BOX.getFeature(StickFeature.class)
+        return BoxProvider.get().getFeature(StickFeature.class)
                 .orElseThrow(() -> new IllegalStateException("Failed to load boxStickItem."))
                 .getBoxStickItem();
     }

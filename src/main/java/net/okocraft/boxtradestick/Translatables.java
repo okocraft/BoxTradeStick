@@ -1,8 +1,6 @@
 package net.okocraft.boxtradestick;
 
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import net.kyori.adventure.key.Key;
 import com.github.siroshun09.configapi.api.Configuration;
@@ -55,7 +56,8 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
 
         Configuration source;
 
-        try (var input = ResourceUtils.getInputStreamFromJar(jarFile, strLocale + ".yml")) {
+        try (var jar = new JarFile(getFile());
+             var input = ResourceUtils.getInputStreamFromJar(jar, strLocale + ".yml")) {
             source = YamlConfiguration.loadFromInputStream(input);
         }
 
