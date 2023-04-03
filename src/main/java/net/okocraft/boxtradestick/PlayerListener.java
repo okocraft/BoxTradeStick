@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -13,11 +14,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityPortalEnterEvent;
 import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.Merchant;
@@ -121,7 +124,17 @@ public class PlayerListener implements Listener {
     public void onEntityTeleport(EntityTeleportEvent event) {
         if (event.getEntity() instanceof Merchant merchant) {
             HumanEntity trader = merchant.getTrader();
-            if (trader != null) {
+            if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI) {
+                trader.closeInventory();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityTeleport(EntityPortalEnterEvent event) {
+        if (event.getEntity() instanceof Merchant merchant) {
+            HumanEntity trader = merchant.getTrader();
+            if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI) {
                 trader.closeInventory();
             }
         }
@@ -131,8 +144,22 @@ public class PlayerListener implements Listener {
     public void onEntityMove(EntityMoveEvent event) {
         if (event.getEntity() instanceof Merchant merchant) {
             HumanEntity trader = merchant.getTrader();
-            if (trader != null && trader.getLocation().distanceSquared(event.getEntity().getLocation()) < 100) {
+            if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI
+                     && trader.getLocation().distanceSquared(event.getEntity().getLocation()) > 100) {
                 trader.closeInventory();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityMove(VehicleMoveEvent event) {
+        for (Entity passenger : event.getVehicle().getPassengers()) {
+            if (passenger instanceof Merchant merchant) {
+                HumanEntity trader = merchant.getTrader();
+                if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI
+                         && trader.getLocation().distanceSquared(passenger.getLocation()) > 100) {
+                    trader.closeInventory();
+                }
             }
         }
     }
