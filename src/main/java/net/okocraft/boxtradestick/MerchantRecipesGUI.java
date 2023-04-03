@@ -40,10 +40,6 @@ public class MerchantRecipesGUI implements InventoryHolder {
         initialize();
     }
 
-    public void onClose() {
-        NMSUtil.stopTrading(merchant);
-    }
-
     public Merchant getMerchant() {
         return this.merchant;
     }

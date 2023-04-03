@@ -1,9 +1,9 @@
 package net.okocraft.boxtradestick;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.okocraft.box.api.BoxProvider;
 import net.okocraft.box.api.event.stockholder.stock.StockEvent;
 import net.okocraft.box.api.model.item.BoxItem;
@@ -11,7 +11,6 @@ import net.okocraft.box.api.model.stock.StockHolder;
 import net.okocraft.box.feature.stick.StickFeature;
 import net.okocraft.box.feature.stick.item.BoxStickItem;
 import org.bukkit.GameMode;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
@@ -38,9 +37,9 @@ public final class BoxUtil {
         }
 
         items = new ArrayList<>(items);
-        items.removeIf(i -> i.getType() == Material.AIR);
+        items.removeIf(i -> i.getType().isAir());
 
-        var requiredItems = new HashMap<BoxItem, Integer>();
+        var requiredItems = new ConcurrentHashMap<BoxItem, Integer>();
         for (ItemStack ingredient: items) {
             var boxItem = Optional.ofNullable(ingredient).flatMap(BoxUtil::getBoxItem);
             if (boxItem.isEmpty()) {
@@ -66,7 +65,7 @@ public final class BoxUtil {
         }
 
         items = new ArrayList<>(items);
-        items.removeIf(i -> i.getType() == Material.AIR);
+        items.removeIf(i -> i.getType().isAir());
 
         int consumingAmount = Integer.MAX_VALUE;
         for (ItemStack ingredient: items) {

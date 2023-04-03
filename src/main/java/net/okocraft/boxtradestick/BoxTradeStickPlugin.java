@@ -13,11 +13,27 @@ import com.github.siroshun09.configapi.yaml.YamlConfiguration;
 import com.github.siroshun09.translationloader.ConfigurationLoader;
 import com.github.siroshun09.translationloader.TranslationLoader;
 import com.github.siroshun09.translationloader.directory.TranslationDirectory;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class BoxTradeStickPlugin extends JavaPlugin {
+
+    public static final boolean FOLIA;
+
+    static {
+        boolean isFolia;
+
+        try {
+            Bukkit.class.getDeclaredMethod("getAsyncScheduler");
+            isFolia = true;
+        } catch (NoSuchMethodException e) {
+            isFolia = false;
+        }
+
+        FOLIA = isFolia;
+    }
 
     private final Path jarFile;
 
@@ -79,7 +95,7 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
     }
 
     @Override

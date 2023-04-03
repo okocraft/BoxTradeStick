@@ -1,13 +1,13 @@
 package net.okocraft.boxtradestick;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -22,8 +22,8 @@ public class TradeStickData {
     private static final NamespacedKey OFFER_NUMBER_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:offer_number"));
     private static final NamespacedKey SCROLL_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:scroll"));
 
-    private final Map<UUID, Integer> offerSelections = new HashMap<>();
-    private final Map<UUID, Integer> scrolls = new HashMap<>();
+    private final Map<UUID, Integer> offerSelections = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> scrolls = new ConcurrentHashMap<>();
 
     public TradeStickData() {
     }
@@ -83,8 +83,8 @@ public class TradeStickData {
                 @Override
                 public @NotNull TradeStickData fromPrimitive(PersistentDataContainer[] primitive,
                                                                                 @NotNull PersistentDataAdapterContext context) {
-                    Map<UUID, Integer> offerSelections = new HashMap<>();
-                    Map<UUID, Integer> scrolls = new HashMap<>();
+                    Map<UUID, Integer> offerSelections = new ConcurrentHashMap<>();
+                    Map<UUID, Integer> scrolls = new ConcurrentHashMap<>();
                     for (PersistentDataContainer container : primitive) {
                         try {
                             UUID id = UUID.fromString(container.getOrDefault(ID_KEY, STRING, "null"));

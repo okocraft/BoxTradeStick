@@ -1,8 +1,9 @@
 package net.okocraft.boxtradestick;
 
-import java.util.HashMap;
+import io.papermc.paper.event.entity.EntityMoveEvent;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.HumanEntity;
@@ -12,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -22,8 +24,13 @@ import org.bukkit.inventory.Merchant;
 
 public class PlayerListener implements Listener {
 
-    private final Map<UUID, Long> hitTradeCooldown = new HashMap<>();
-    private boolean onEntityDamageByEntityEvent = false;
+    private final BoxTradeStickPlugin plugin;
+    private final Map<UUID, Long> hitTradeCooldown = new ConcurrentHashMap<>();
+    private volatile boolean onEntityDamageByEntityEvent = false;
+
+    PlayerListener(BoxTradeStickPlugin plugin) {
+        this.plugin = plugin;
+    }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -110,6 +117,26 @@ public class PlayerListener implements Listener {
         player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
     }
 
+    @EventHandler
+    public void onEntityTeleport(EntityTeleportEvent event) {
+        if (event.getEntity() instanceof Merchant merchant) {
+            HumanEntity trader = merchant.getTrader();
+            if (trader != null) {
+                trader.closeInventory();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityMove(EntityMoveEvent event) {
+        if (event.getEntity() instanceof Merchant merchant) {
+            HumanEntity trader = merchant.getTrader();
+            if (trader != null && trader.getLocation().distanceSquared(event.getEntity().getLocation()) < 100) {
+                trader.closeInventory();
+            }
+        }
+    }
+
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
@@ -121,8 +148,13 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui) {
-            gui.onClose();
+        if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
+                && gui.getMerchant() instanceof AbstractVillager villager) {
+            if (BoxTradeStickPlugin.FOLIA) {
+                villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
+            } else {
+                NMSUtil.stopTrading(villager);
+            }
         }
     }
 

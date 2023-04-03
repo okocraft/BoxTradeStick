@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     java
-    id("io.papermc.paperweight.userdev") version "1.5.3"
+    id("io.papermc.paperweight.userdev") version "1.5.4-SNAPSHOT"
     id("com.github.johnrengelman.shadow") version "8.1.0"
 }
 
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.19.4-R0.1-20230319.193530-16")
+    paperweight.foliaDevBundle("1.19.4-R0.1-SNAPSHOT")
 
     implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.3")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
