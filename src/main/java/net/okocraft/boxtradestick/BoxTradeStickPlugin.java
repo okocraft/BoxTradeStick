@@ -50,7 +50,7 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
                         .setKey(Key.key("boxtradestick", "languages"))
                         .setDefaultLocale(Locale.ENGLISH)
                         .onDirectoryCreated(this::saveDefaultLanguages)
-                        .setVersion(getDescription().getVersion())
+                        .setVersion(getPluginMeta().getVersion()) // getPluginMeta never returns null
                         .setTranslationLoaderCreator(this::getBundledTranslation)
                         .build();
     }
