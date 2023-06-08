@@ -178,7 +178,8 @@ public class PlayerListener implements Listener {
         if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
                 && gui.getMerchant() instanceof AbstractVillager villager) {
             if (BoxTradeStickPlugin.FOLIA) {
-                villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
+                //villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
+                throw new UnsupportedOperationException(); // FIXME: folia
             } else {
                 NMSUtil.stopTrading(villager);
             }
