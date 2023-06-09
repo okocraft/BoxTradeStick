@@ -1,7 +1,7 @@
 name: BoxTradeStick
 version: '${projectVersion}'
 main: net.okocraft.boxtradestick.BoxTradeStickPlugin
-api-version: 1.20
+api-version: "1.20"
 #folia-supported: true
 depend:
   - Box
