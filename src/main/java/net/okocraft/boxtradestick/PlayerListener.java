@@ -1,9 +1,6 @@
 package net.okocraft.boxtradestick;
 
 import io.papermc.paper.event.entity.EntityMoveEvent;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Entity;
@@ -25,7 +22,26 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.Merchant;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class PlayerListener implements Listener {
+
+    private static final boolean ENTITY_SCHEDULER;
+
+    static {
+        boolean entityScheduler;
+
+        try {
+            Villager.class.getMethod("getScheduler");
+            entityScheduler = true;
+        } catch (NoSuchMethodException e) {
+            entityScheduler = false;
+        }
+
+        ENTITY_SCHEDULER = entityScheduler;
+    }
 
     private final BoxTradeStickPlugin plugin;
     private final Map<UUID, Long> hitTradeCooldown = new ConcurrentHashMap<>();
@@ -177,7 +193,7 @@ public class PlayerListener implements Listener {
     public void onInventoryClose(InventoryCloseEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
                 && gui.getMerchant() instanceof AbstractVillager villager) {
-            if (BoxTradeStickPlugin.FOLIA) {
+            if (ENTITY_SCHEDULER) {
                 villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
             } else {
                 NMSUtil.stopTrading(villager);

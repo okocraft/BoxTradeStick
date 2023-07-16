@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     java
-    id("io.papermc.paperweight.userdev") version "1.5.4-SNAPSHOT"
+    id("io.papermc.paperweight.userdev") version "1.5.5"
     id("com.github.johnrengelman.shadow") version "8.1.0"
 }
 
@@ -16,14 +16,14 @@ repositories {
 }
 
 dependencies {
-    paperweight.foliaDevBundle("1.19.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.20.1-R0.1-SNAPSHOT")
 
-    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.3")
+    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
 
-    compileOnly("net.okocraft.box:box-api:5.2.0")
-    compileOnly("net.okocraft.box:box-storage-api:5.2.0")
-    compileOnly("net.okocraft.box:box-stick-feature:5.2.0")
+    compileOnly("net.okocraft.box:box-api:5.3.1")
+    compileOnly("net.okocraft.box:box-storage-api:5.3.1")
+    compileOnly("net.okocraft.box:box-stick-feature:5.3.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
