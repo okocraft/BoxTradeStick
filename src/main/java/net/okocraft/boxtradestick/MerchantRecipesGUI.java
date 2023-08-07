@@ -40,6 +40,18 @@ public class MerchantRecipesGUI implements InventoryHolder {
         initialize();
     }
 
+    public static boolean isGUI(Inventory topInventory) {
+        return fromTopInventory(topInventory) != null;
+    }
+
+    public static MerchantRecipesGUI fromTopInventory(Inventory topInventory) {
+        try {
+            return (MerchantRecipesGUI) topInventory.getHolder();
+        } catch (IllegalStateException | ClassCastException e) {
+            return null;
+        }
+    }
+
     public Merchant getMerchant() {
         return this.merchant;
     }

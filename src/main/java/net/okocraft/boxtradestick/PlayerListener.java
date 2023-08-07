@@ -11,6 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
 import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -142,6 +143,20 @@ public class PlayerListener implements Listener {
             HumanEntity trader = merchant.getTrader();
             if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI) {
                 trader.closeInventory();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onVillagerDeath(EntityDeathEvent event) {
+        if (!(event.getEntity() instanceof AbstractVillager villager)) {
+            return;
+        }
+
+        for (Player p : plugin.getServer().getOnlinePlayers()) {
+            MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(p.getOpenInventory().getTopInventory());
+            if (gui != null && villager.equals(gui.getMerchant())) {
+                p.closeInventory();
             }
         }
     }
