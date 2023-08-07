@@ -141,7 +141,7 @@ public class PlayerListener implements Listener {
     public void onEntityTeleport(EntityTeleportEvent event) {
         if (event.getEntity() instanceof Merchant merchant) {
             HumanEntity trader = merchant.getTrader();
-            if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI) {
+            if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())) {
                 trader.closeInventory();
             }
         }
@@ -165,7 +165,7 @@ public class PlayerListener implements Listener {
     public void onEntityTeleport(EntityPortalEnterEvent event) {
         if (event.getEntity() instanceof Merchant merchant) {
             HumanEntity trader = merchant.getTrader();
-            if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI) {
+            if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())) {
                 trader.closeInventory();
             }
         }
@@ -175,7 +175,7 @@ public class PlayerListener implements Listener {
     public void onEntityMove(EntityMoveEvent event) {
         if (event.getEntity() instanceof Merchant merchant) {
             HumanEntity trader = merchant.getTrader();
-            if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI
+            if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())
                      && trader.getLocation().distanceSquared(event.getEntity().getLocation()) > 100) {
                 trader.closeInventory();
             }
@@ -187,7 +187,7 @@ public class PlayerListener implements Listener {
         for (Entity passenger : event.getVehicle().getPassengers()) {
             if (passenger instanceof Merchant merchant) {
                 HumanEntity trader = merchant.getTrader();
-                if (trader != null && trader.getOpenInventory().getTopInventory().getHolder() instanceof MerchantRecipesGUI
+                if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())
                          && trader.getLocation().distanceSquared(passenger.getLocation()) > 100) {
                     trader.closeInventory();
                 }
@@ -197,8 +197,11 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
-                && event.getClickedInventory() != null) {
+        if (event.getClickedInventory() == null) {
+            return;
+        }
+        MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
+        if (gui != null) {
             event.setCancelled(true);
             gui.onClick(event.getSlot());
         }
@@ -206,8 +209,8 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof MerchantRecipesGUI gui
-                && gui.getMerchant() instanceof AbstractVillager villager) {
+        MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
+        if (gui != null && gui.getMerchant() instanceof AbstractVillager villager) {
             if (ENTITY_SCHEDULER) {
                 villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
             } else {
@@ -227,13 +230,15 @@ public class PlayerListener implements Listener {
         }
 
         Inventory inv = trader.getOpenInventory().getTopInventory();
-        if (inv.getHolder() instanceof MerchantRecipesGUI gui) {
+        MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(inv);
+        if (gui != null) {
             return gui.getMerchant().equals(merchant);
-        } else if (inv.getHolder() instanceof AbstractVillager villager1) {
-            return villager.equals(villager1);
         }
 
-        return false;
+        try {
+            return villager.equals(inv.getHolder());
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
-
 }
