@@ -1,6 +1,7 @@
 package net.okocraft.boxtradestick;
 
 import io.papermc.paper.event.entity.EntityMoveEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Entity;
@@ -22,6 +23,7 @@ import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.Merchant;
+import org.bukkit.inventory.MerchantInventory;
 
 import java.util.Map;
 import java.util.UUID;
@@ -176,7 +178,7 @@ public class PlayerListener implements Listener {
         if (event.getEntity() instanceof Merchant merchant) {
             HumanEntity trader = merchant.getTrader();
             if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())
-                     && trader.getLocation().distanceSquared(event.getEntity().getLocation()) > 100) {
+                    && trader.getLocation().distanceSquared(event.getEntity().getLocation()) > 100) {
                 trader.closeInventory();
             }
         }
@@ -188,7 +190,7 @@ public class PlayerListener implements Listener {
             if (passenger instanceof Merchant merchant) {
                 HumanEntity trader = merchant.getTrader();
                 if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())
-                         && trader.getLocation().distanceSquared(passenger.getLocation()) > 100) {
+                        && trader.getLocation().distanceSquared(passenger.getLocation()) > 100) {
                     trader.closeInventory();
                 }
             }
@@ -220,25 +222,26 @@ public class PlayerListener implements Listener {
     }
 
     private boolean isTrading(Merchant merchant) {
-        if (!(merchant instanceof AbstractVillager villager)) {
-            return false;
-        }
-
         HumanEntity trader = merchant.getTrader();
+
         if (trader == null) {
             return false;
         }
 
         Inventory inv = trader.getOpenInventory().getTopInventory();
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(inv);
-        if (gui != null) {
-            return gui.getMerchant().equals(merchant);
-        }
+        Merchant actuallyTrading;
 
-        try {
-            return villager.equals(inv.getHolder());
-        } catch (IllegalStateException e) {
+        if (gui != null) {
+            actuallyTrading = gui.getMerchant();
+        } else if (inv instanceof MerchantInventory merchantInventory) {
+            actuallyTrading = merchantInventory.getMerchant();
+        } else {
             return false;
         }
+
+        return actuallyTrading instanceof AbstractVillager villager &&
+                Bukkit.isOwnedByCurrentRegion(villager) &&
+                merchant.equals(villager);
     }
 }

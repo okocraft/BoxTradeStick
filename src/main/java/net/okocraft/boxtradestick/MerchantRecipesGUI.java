@@ -27,6 +27,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class MerchantRecipesGUI implements InventoryHolder {
 
+    private static final Class<?> CUSTOM_INVENTORY_CLASS;
+
+    static {
+        CUSTOM_INVENTORY_CLASS = Bukkit.createInventory(null, 54, Component.empty()).getClass();
+    }
+
     private final Inventory inventory;
 
     private final Player trader;
@@ -45,9 +51,9 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     public static MerchantRecipesGUI fromTopInventory(Inventory topInventory) {
-        try {
-            return (MerchantRecipesGUI) topInventory.getHolder();
-        } catch (IllegalStateException | ClassCastException e) {
+        if (CUSTOM_INVENTORY_CLASS.isInstance(topInventory) && topInventory.getHolder() instanceof MerchantRecipesGUI gui) {
+            return gui;
+        } else {
             return null;
         }
     }
