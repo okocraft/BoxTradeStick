@@ -26,6 +26,7 @@ dependencies {
     compileOnly("net.okocraft.box:box-stick-feature:5.3.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
+    testRuntimeOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 

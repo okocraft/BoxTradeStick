@@ -79,6 +79,10 @@ public class PlayerListener implements Listener {
 
         event.setCancelled(true);
 
+        if (!MerchantRecipesGUI.canTradeByStick(villager)) {
+            return;
+        }
+
         long cooldown = hitTradeCooldown.getOrDefault(player.getUniqueId(), 0L) + 1000L - System.currentTimeMillis();
         if (0 < cooldown) {
             player.sendActionBar(Translatables.HIT_TRADING_COOLDOWN.apply(cooldown));
@@ -136,7 +140,9 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
+        if (MerchantRecipesGUI.canTradeByStick(abstractVillager)) {
+            player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
+        }
     }
 
     @EventHandler
@@ -212,7 +218,8 @@ public class PlayerListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
-        if (gui != null && gui.getMerchant() instanceof AbstractVillager villager) {
+        if (gui != null) {
+            AbstractVillager villager = gui.getMerchant();
             if (ENTITY_SCHEDULER) {
                 villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
             } else {
