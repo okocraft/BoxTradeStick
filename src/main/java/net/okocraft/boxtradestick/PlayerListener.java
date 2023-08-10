@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerListener implements Listener {
 
     private static final boolean ENTITY_SCHEDULER;
+    private static final long TRADE_COOLDOWN_TIME = 1000L;
+    private static final long TRADE_COOLDOWN_TIME_AFTER_THE_2ND = 500L;
 
     static {
         boolean entityScheduler;
@@ -83,9 +85,12 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        long cooldown = hitTradeCooldown.getOrDefault(player.getUniqueId(), 0L) + 1000L - System.currentTimeMillis();
-        if (0 < cooldown) {
-            player.sendActionBar(Translatables.HIT_TRADING_COOLDOWN.apply(cooldown));
+        MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
+        int[] selectedIndices = gui.getCurrentSelectedIndices();
+
+        long cooldownTime = calcCooldownTime(player, selectedIndices.length);
+        if (0 < cooldownTime) {
+            player.sendActionBar(Translatables.HIT_TRADING_COOLDOWN.apply(cooldownTime));
             return;
         }
 
@@ -99,20 +104,21 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
-        int selectedOfferIndex = gui.getCurrentSelected();
-        if (selectedOfferIndex == -1) {
+        if (selectedIndices.length == 0) {
             player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             return;
         }
 
-        int traded = gui.tradeForMaxUses(gui.getCurrentSelected());
-        if (traded > 0) {
-            player.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
-            hitTradeCooldown.put(player.getUniqueId(), System.currentTimeMillis());
-        } else {
-            player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-            player.sendActionBar(Translatables.OUT_OF_STOCK);
+        for (int index : selectedIndices) {
+            int traded = gui.tradeForMaxUses(index);
+            if (traded > 0) {
+                player.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
+                // NOTE: 複数回実行されるケースがあるが、上書きされるだけで最後にputされた値を使うで問題がないためそのままにする
+                hitTradeCooldown.put(player.getUniqueId(), System.currentTimeMillis());
+            } else {
+                player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
+                player.sendActionBar(Translatables.OUT_OF_STOCK);
+            }
         }
 
         NMSUtil.stopTrading(villager);
@@ -226,6 +232,12 @@ public class PlayerListener implements Listener {
                 NMSUtil.stopTrading(villager);
             }
         }
+    }
+
+    private long calcCooldownTime(Player player, int selectCount) {
+        long tradeTime = hitTradeCooldown.getOrDefault(player.getUniqueId(), 0L);
+        long cooldownTime = TRADE_COOLDOWN_TIME + TRADE_COOLDOWN_TIME_AFTER_THE_2ND * selectCount;
+        return tradeTime + cooldownTime - System.currentTimeMillis();
     }
 
     private boolean isTrading(Merchant merchant) {
