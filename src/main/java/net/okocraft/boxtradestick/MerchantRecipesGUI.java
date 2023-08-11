@@ -216,7 +216,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
         }
     }
 
-    public boolean tradeForMaxUses(int[] recipeIndices) {
+    public int tradeForMaxUses(int[] recipeIndices) {
         List<TradeResult> results = new ArrayList<>();
         for (int index : recipeIndices) {
             TradeResult result = tradeForMaxUses(index);
@@ -227,7 +227,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
         if (succeeded.length == 0) {
             trader.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             trader.sendActionBar(Translatables.OUT_OF_STOCK);
-            return false;
+            return 0;
         }
 
         update();
@@ -236,14 +236,14 @@ public class MerchantRecipesGUI implements InventoryHolder {
         if (succeeded.length == 1) {
             TradeResult result = succeeded[0];
             trader.sendActionBar(Translatables.RESULT_TIMES.apply(result.getCount(), result.getRecipe().getResult()));
-            return true;
-        }
+        } else {
 
-        trader.sendActionBar(Translatables.MULTIPLE_RESULT_TIMES.apply(
-                succeeded.length,
-                Arrays.stream(succeeded).mapToInt(TradeResult::getCount).sum()
-        ));
-        return true;
+            trader.sendActionBar(Translatables.MULTIPLE_RESULT_TIMES.apply(
+                    succeeded.length,
+                    Arrays.stream(succeeded).mapToInt(TradeResult::getCount).sum()
+            ));
+        }
+        return succeeded.length;
     }
 
     private TradeResult tradeForMaxUses(int recipeIndex) {
