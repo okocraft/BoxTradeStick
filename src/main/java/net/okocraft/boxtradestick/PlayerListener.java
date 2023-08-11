@@ -109,16 +109,8 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        for (int index : selectedIndices) {
-            int traded = gui.tradeForMaxUses(index);
-            if (traded > 0) {
-                player.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
-                // NOTE: 複数回実行されるケースがあるが、上書きされるだけで最後にputされた値を使うで問題がないためそのままにする
-                hitTradeCooldown.put(player.getUniqueId(), System.currentTimeMillis());
-            } else {
-                player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-                player.sendActionBar(Translatables.OUT_OF_STOCK);
-            }
+        if (gui.tradeForMaxUses(selectedIndices)) {
+            hitTradeCooldown.put(player.getUniqueId(), System.currentTimeMillis());
         }
 
         NMSUtil.stopTrading(villager);
