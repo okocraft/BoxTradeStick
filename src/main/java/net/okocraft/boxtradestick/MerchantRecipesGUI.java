@@ -1,18 +1,12 @@
 package net.okocraft.boxtradestick;
 
-import io.papermc.paper.event.player.PlayerPurchaseEvent;
-import io.papermc.paper.event.player.PlayerTradeEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.okocraft.box.api.model.item.BoxItem;
-import net.okocraft.box.api.transaction.InventoryTransaction;
-import net.okocraft.box.api.transaction.TransactionResult;
-import net.okocraft.box.storage.api.factory.item.BoxItemFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -22,7 +16,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class MerchantRecipesGUI implements InventoryHolder {
 
@@ -30,29 +26,6 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
     static {
         CUSTOM_INVENTORY_CLASS = Bukkit.createInventory(null, 54, Component.empty()).getClass();
-    }
-
-    private final Inventory inventory;
-
-    private final Player trader;
-    private final AbstractVillager villager;
-    private final TradeStickData data;
-
-    public MerchantRecipesGUI(Player trader, AbstractVillager villager) {
-        this.inventory = Bukkit.createInventory(this, 54, Translatables.GUI_TITLE.apply(villager));
-        this.trader = trader;
-        this.villager = villager;
-        this.data = TradeStickData.loadFrom(villager);
-
-        initialize();
-    }
-
-    public static boolean canTradeByStick(@NotNull AbstractVillager villager) {
-        return villager.getRecipeCount() < TradeStickData.MAXIMUM_INDEX;
-    }
-
-    public static boolean isGUI(Inventory topInventory) {
-        return fromTopInventory(topInventory) != null;
     }
 
     public static MerchantRecipesGUI fromTopInventory(Inventory topInventory) {
@@ -63,8 +36,20 @@ public class MerchantRecipesGUI implements InventoryHolder {
         }
     }
 
-    public AbstractVillager getMerchant() {
-        return this.villager;
+    private final Player trader;
+    private final UUID worldUid;
+    private final UUID villagerUuid;
+
+    private final Inventory inventory;
+
+    public MerchantRecipesGUI(@NotNull Player trader, @NotNull AbstractVillager villager) {
+        this.trader = trader;
+        this.worldUid = villager.getWorld().getUID();
+        this.villagerUuid = villager.getUniqueId();
+
+        this.inventory = Bukkit.createInventory(this, 54, Translatables.GUI_TITLE.apply(villager));
+
+        initialize(villager);
     }
 
     @Override
@@ -72,28 +57,43 @@ public class MerchantRecipesGUI implements InventoryHolder {
         return inventory;
     }
 
-    public int getMaxScroll() {
-        return Math.max(0, villager.getRecipeCount() - 6);
+    public void initialize(@NotNull AbstractVillager villager) {
+        ItemStack[] filled = inventory.getContents();
+        Arrays.fill(filled, createNonButton());
+        getInventory().setContents(filled);
+
+        inventory.setItem(17, createArrow(Translatables.GUI_SCROLL_UP_ARROW));
+        inventory.setItem(44, createArrow(Translatables.GUI_SCROLL_DOWN_ARROW));
+
+        update(villager, TradeStickData.loadFrom(villager));
     }
 
-    public void scrollDown() {
-        int scroll = getScroll();
-        if (scroll + 1 <= getMaxScroll()) {
-            setScroll(scroll + 1);
+    private ItemStack createNonButton() {
+        return ItemUtil.create(
+                trader.locale(),
+                Material.GRAY_STAINED_GLASS_PANE,
+                Component.empty().color(NamedTextColor.BLACK)
+        );
+    }
+
+    private ItemStack createArrow(Component name) {
+        return ItemUtil.create(trader.locale(), Material.ARROW, name);
+    }
+
+    private void update(@NotNull AbstractVillager villager, @NotNull TradeStickData data) {
+        int recipeCount = villager.getRecipeCount();
+
+        int maxScroll = getMaxScroll(recipeCount);
+        int scroll = getScroll(maxScroll, data);
+
+        for (int row = 0; row < Math.min(recipeCount, 6); row++) {
+            int recipeIndex = row + scroll;
+            updateTradeItem(villager, row, recipeIndex, data.isSelected(trader.getUniqueId(), recipeIndex));
         }
     }
 
-    public void scrollUp() {
-        int scroll = getScroll();
-        if (1 <= scroll) {
-            setScroll(scroll - 1);
-        }
-    }
-
-    public void updateTradeItem(int row) {
-        int recipeIndex = row + getScroll();
-
-        if (data.isSelected(trader.getUniqueId(), recipeIndex)) {
+    private void updateTradeItem(@NotNull AbstractVillager villager, int row, int recipeIndex, boolean selected) {
+        if (selected) {
             inventory.setItem(row * 9, ItemUtil.create(
                     trader.locale(),
                     Material.LIME_WOOL,
@@ -151,242 +151,100 @@ public class MerchantRecipesGUI implements InventoryHolder {
         inventory.setItem(row * 9 + 6, result);
     }
 
-    public void initialize() {
-        ItemStack[] filled = inventory.getContents();
-        Arrays.fill(filled, createNonButton());
-        getInventory().setContents(filled);
-
-        inventory.setItem(17, createArrow(Translatables.GUI_SCROLL_UP_ARROW));
-        inventory.setItem(44, createArrow(Translatables.GUI_SCROLL_DOWN_ARROW));
-
-        update();
-    }
-
-    public void update() {
-        for (int row = 0; row < Math.min(villager.getRecipeCount(), 6); row++) {
-            updateTradeItem(row);
-        }
-    }
-
-    private ItemStack createNonButton() {
-        return ItemUtil.create(
-                trader.locale(),
-                Material.GRAY_STAINED_GLASS_PANE,
-                Component.empty().color(NamedTextColor.BLACK)
-        );
-    }
-
-    private ItemStack createArrow(Component name) {
-        return ItemUtil.create(trader.locale(), Material.ARROW, name);
-    }
-
     public void onClick(int slot) {
+        var villager = getVillager();
+
+        if (villager == null ||
+                villager.isDead() ||
+                !villager.getWorld().equals(trader.getWorld()) ||
+                villager.getLocation().distanceSquared(trader.getLocation()) > 100 ||
+                !trader.equals(villager.getTrader())) {
+            trader.closeInventory();
+            return;
+        }
+
+        var data = TradeStickData.loadFrom(villager);
+
         int column = slot % 9;
         int row = slot / 9;
 
-        int recipeIndex = row + getScroll();
+        int maxScroll = getMaxScroll(villager.getRecipeCount());
+        int scroll = getScroll(maxScroll, data);
+        int recipeIndex = row + scroll;
 
         if (column == 0) {
             if (recipeIndex < villager.getRecipeCount()) {
                 data.toggleOfferSelection(trader.getUniqueId(), recipeIndex);
                 data.saveTo(villager);
+                update(villager, data);
             }
         } else if (column == 5) {
-            boolean tradeSuccess = trade(recipeIndex);
+            boolean tradeSuccess = TradeProcessor.trade(trader, villager, recipeIndex);
 
             if (tradeSuccess) {
+                update(villager, data);
                 trader.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
             } else {
                 trader.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             }
         } else if (column == 6) {
-            boolean tradeSuccess = tradeForMaxUses(recipeIndex).succeeded();
+            boolean tradeSuccess = TradeProcessor.tradeForMaxUses(trader, villager, recipeIndex) != null;
 
             if (tradeSuccess) {
+                update(villager, data);
                 trader.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
             } else {
                 trader.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             }
         } else if (column == 8) {
             if (row == 1) {
-                scrollUp();
+                scroll--; // scroll up
             } else if (row == 4) {
-                scrollDown();
-            }
-        }
-    }
-
-    public int tradeForMaxUses(int[] recipeIndices) {
-        List<TradeResult> results = new ArrayList<>();
-        for (int index : recipeIndices) {
-            TradeResult result = tradeForMaxUses(index);
-            if (result.succeeded()) {
-                results.add(result);
-            }
-        }
-
-        if (results.isEmpty()) {
-            trader.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-            trader.sendActionBar(Translatables.OUT_OF_STOCK);
-            return 0;
-        }
-
-        update();
-        trader.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
-
-        if (results.size() == 1) {
-            TradeResult result = results.get(0);
-            trader.sendActionBar(Translatables.RESULT_TIMES.apply(result.getCount(), result.getRecipe().getResult()));
-        } else {
-
-            trader.sendActionBar(Translatables.MULTIPLE_RESULT_TIMES.apply(
-                    results.stream().mapToInt(TradeResult::getCount).sum(),
-                    results.size()
-            ));
-        }
-        return results.size();
-    }
-
-    private TradeResult tradeForMaxUses(int recipeIndex) {
-        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade")) {
-            return new TradeResult(0, null);
-        }
-
-        if (recipeIndex < 0 || recipeIndex >= villager.getRecipeCount()) {
-            return new TradeResult(0, null);
-        }
-
-        MerchantRecipe merchantOffer = villager.getRecipe(recipeIndex);
-        int traded = 0;
-        for (int i = merchantOffer.getUses(); i < merchantOffer.getMaxUses(); i++) {
-            if (trade0(merchantOffer)) {
-                traded++;
-            }
-        }
-
-        return new TradeResult(traded, merchantOffer);
-    }
-
-    public boolean trade(int recipeIndex) {
-        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade")) {
-            return false;
-        }
-
-        if (recipeIndex < 0 || recipeIndex >= villager.getRecipeCount()) {
-            return false;
-        }
-
-        if (trade0(villager.getRecipe(recipeIndex))) {
-            update();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean trade0(MerchantRecipe merchantOffer) {
-        if (merchantOffer.getUses() >= merchantOffer.getMaxUses()) {
-            return false;
-        }
-
-        PlayerPurchaseEvent event = new PlayerTradeEvent(trader, villager, merchantOffer, true, true);
-
-        if (!event.callEvent()) {
-            return false;
-        }
-
-        merchantOffer = event.getTrade();
-        List<ItemStack> ingredients = new ArrayList<>(merchantOffer.getIngredients());
-        if (ingredients.size() >= 1) {
-            ingredients.set(0, merchantOffer.getAdjustedIngredient1());
-        }
-        var cause = new BoxUtil.Trade(trader, merchantOffer);
-        if (!BoxUtil.tryConsumingStockMulti(trader, ingredients, cause)) {
-            return false;
-        }
-
-        var resultBukkit = merchantOffer.getResult();
-
-        var result = BoxUtil.getBoxItem(resultBukkit);
-        if (result.isEmpty()) {
-            // painful api usage!
-            BoxItem resultBoxItem = BoxItemFactory.createCustomItem(
-                    resultBukkit.clone(),
-                    PlainTextComponentSerializer.plainText().serialize(resultBukkit.displayName()),
-                    -1
-            );
-            TransactionResult transaction = InventoryTransaction.withdraw(
-                    trader.getInventory(),
-                    resultBoxItem,
-                    resultBukkit.getAmount()
-            );
-            ItemStack drop = resultBukkit.clone();
-            if (transaction.getType().isModified()) {
-                if (drop.getAmount() != transaction.getAmount()) {
-                    drop.setAmount(drop.getAmount() - transaction.getAmount());
-                    drop(trader, drop);
-                }
+                scroll++; // scroll down
             } else {
-                drop(trader, drop);
+                return;
             }
+
+            if (0 <= scroll && scroll <= maxScroll) {
+                data.setScroll(trader.getUniqueId(), scroll);
+                data.saveTo(villager);
+                update(villager, data);
+            }
+        }
+    }
+
+    public void onClose() {
+        var villager = getVillagerUnsafe();
+
+        if (villager != null) {
+            if (Bukkit.isOwnedByCurrentRegion(villager)) {
+                NMSUtil.stopTrading(villager);
+            } else {
+                villager.getScheduler().run(JavaPlugin.getPlugin(BoxTradeStickPlugin.class), task -> NMSUtil.stopTrading(villager), null);
+            }
+        }
+    }
+
+    public @Nullable AbstractVillager getVillager() {
+        var villager = getVillagerUnsafe();
+        return villager != null && Bukkit.isOwnedByCurrentRegion(villager) ? villager : null;
+    }
+
+    private @Nullable AbstractVillager getVillagerUnsafe() {
+        var world = Bukkit.getWorld(worldUid);
+
+        if (world != null && world.getEntity(villagerUuid) instanceof AbstractVillager villager) {
+            return villager;
         } else {
-            // stock is definitely present.
-            BoxUtil.getStock(trader).ifPresent(stock -> stock.increase(result.get(), resultBukkit.getAmount(), cause));
+            return null;
         }
-
-        NMSUtil.processTrade(trader, villager, merchantOffer, event);
-        return true;
     }
 
-    private static void drop(Player player, ItemStack item) {
-        ItemStack hand = player.getInventory().getItemInMainHand().clone();
-        player.getInventory().setItemInMainHand(item);
-        player.dropItem(true);
-        player.getInventory().setItemInMainHand(hand);
+    private int getMaxScroll(int recipeCount) {
+        return Math.max(0, recipeCount - 6);
     }
 
-    /**
-     * @deprecated use {@link #getCurrentSelectedIndices()}
-     */
-    @Deprecated(forRemoval = true)
-    public int getCurrentSelected() {
-        int[] selected = data.getSelectedIndices(trader.getUniqueId());
-        return selected.length == 0 ? -1 : selected[0];
-    }
-
-    public int[] getCurrentSelectedIndices() {
-        return data.getSelectedIndices(trader.getUniqueId());
-    }
-
-    public int getScroll() {
-        return Math.max(0, Math.min(getMaxScroll(), data.getScroll(trader.getUniqueId())));
-    }
-
-    public void setScroll(int scroll) {
-        data.setScroll(trader.getUniqueId(), scroll);
-        data.saveTo(villager);
-        update();
-    }
-
-    private final class TradeResult {
-        private final int count;
-        private final MerchantRecipe recipe;
-
-        public TradeResult(int count, MerchantRecipe recipe) {
-            this.count = count;
-            this.recipe = recipe;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public MerchantRecipe getRecipe() {
-            return recipe;
-        }
-
-        public boolean succeeded() {
-            return count > 0;
-        }
+    private int getScroll(int maxScroll, @NotNull TradeStickData data) {
+        return Math.max(0, Math.min(maxScroll, data.getScroll(trader.getUniqueId())));
     }
 }

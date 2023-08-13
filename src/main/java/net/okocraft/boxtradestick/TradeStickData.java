@@ -2,6 +2,10 @@ package net.okocraft.boxtradestick;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.persistence.PersistentDataAdapterContext;
@@ -10,11 +14,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 
 public class TradeStickData {
 

@@ -1,8 +1,10 @@
 package net.okocraft.boxtradestick;
 
 import io.papermc.paper.event.entity.EntityMoveEvent;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
-import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
@@ -25,28 +27,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantInventory;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class PlayerListener implements Listener {
 
-    private static final boolean ENTITY_SCHEDULER;
     private static final long TRADE_COOLDOWN_TIME = 1000L;
     private static final long TRADE_COOLDOWN_TIME_AFTER_THE_2ND = 500L;
-
-    static {
-        boolean entityScheduler;
-
-        try {
-            Villager.class.getMethod("getScheduler");
-            entityScheduler = true;
-        } catch (NoSuchMethodException e) {
-            entityScheduler = false;
-        }
-
-        ENTITY_SCHEDULER = entityScheduler;
-    }
 
     private final BoxTradeStickPlugin plugin;
     private final Map<UUID, Long> tradeCooldownEndTimeMap = new ConcurrentHashMap<>();
@@ -81,7 +65,7 @@ public class PlayerListener implements Listener {
 
         event.setCancelled(true);
 
-        if (!MerchantRecipesGUI.canTradeByStick(villager)) {
+        if (!TradeProcessor.canTradeByStick(villager)) {
             return;
         }
 
@@ -101,14 +85,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
-        int[] selectedIndices = gui.getCurrentSelectedIndices();
-        if (selectedIndices.length == 0) {
-            player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-            return;
-        }
-
-        int succeededCount = gui.tradeForMaxUses(selectedIndices);
+        int succeededCount = TradeProcessor.processSelectedOffersForMaxUses(player, villager);
         if (succeededCount > 0) {
             long cooldownEndTime = calcCooldownEndTime(succeededCount);
             tradeCooldownEndTimeMap.put(player.getUniqueId(), cooldownEndTime);
@@ -139,7 +116,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        if (MerchantRecipesGUI.canTradeByStick(abstractVillager)) {
+        if (TradeProcessor.canTradeByStick(abstractVillager)) {
             player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
         }
     }
@@ -162,7 +139,7 @@ public class PlayerListener implements Listener {
 
         for (Player p : plugin.getServer().getOnlinePlayers()) {
             MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(p.getOpenInventory().getTopInventory());
-            if (gui != null && villager.equals(gui.getMerchant())) {
+            if (gui != null && villager.equals(gui.getVillager())) {
                 p.closeInventory();
             }
         }
@@ -217,13 +194,9 @@ public class PlayerListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
+
         if (gui != null) {
-            AbstractVillager villager = gui.getMerchant();
-            if (ENTITY_SCHEDULER) {
-                villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
-            } else {
-                NMSUtil.stopTrading(villager);
-            }
+            gui.onClose();
         }
     }
 
@@ -245,18 +218,15 @@ public class PlayerListener implements Listener {
 
         Inventory inv = trader.getOpenInventory().getTopInventory();
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(inv);
-        Merchant actuallyTrading;
 
         if (gui != null) {
-            actuallyTrading = gui.getMerchant();
+            return merchant.equals(gui.getVillager());
         } else if (inv instanceof MerchantInventory merchantInventory) {
-            actuallyTrading = merchantInventory.getMerchant();
+            return merchantInventory.getMerchant() instanceof AbstractVillager villager &&
+                    Bukkit.isOwnedByCurrentRegion(villager) &&
+                    merchant.equals(villager);
         } else {
             return false;
         }
-
-        return actuallyTrading instanceof AbstractVillager villager &&
-                Bukkit.isOwnedByCurrentRegion(villager) &&
-                merchant.equals(villager);
     }
 }
