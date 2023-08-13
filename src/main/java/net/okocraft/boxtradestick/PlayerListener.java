@@ -233,7 +233,7 @@ public class PlayerListener implements Listener {
 
     private long calcCooldownTime(Player player) {
         long cooldownTime = tradeCooldownEndTimeMap.getOrDefault(player.getUniqueId(), 0L);
-        return cooldownTime -System.currentTimeMillis();
+        return cooldownTime - System.currentTimeMillis();
     }
 
     private boolean isTrading(Merchant merchant) {
