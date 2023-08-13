@@ -17,6 +17,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,11 +43,12 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
     private final Inventory inventory;
 
+    private boolean closed;
+
     public MerchantRecipesGUI(@NotNull Player trader, @NotNull AbstractVillager villager) {
         this.trader = trader;
         this.worldUid = villager.getWorld().getUID();
         this.villagerUuid = villager.getUniqueId();
-
         this.inventory = Bukkit.createInventory(this, 54, Translatables.GUI_TITLE.apply(villager));
 
         initialize(villager);
@@ -57,7 +59,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
         return inventory;
     }
 
-    public void initialize(@NotNull AbstractVillager villager) {
+    private void initialize(@NotNull AbstractVillager villager) {
         ItemStack[] filled = inventory.getContents();
         Arrays.fill(filled, createNonButton());
         getInventory().setContents(filled);
@@ -66,6 +68,26 @@ public class MerchantRecipesGUI implements InventoryHolder {
         inventory.setItem(44, createArrow(Translatables.GUI_SCROLL_DOWN_ARROW));
 
         update(villager, TradeStickData.loadFrom(villager));
+    }
+
+    public void scheduleWatchingTask() {
+        trader.getScheduler().runAtFixedRate(
+                JavaPlugin.getPlugin(BoxTradeStickPlugin.class),
+                task -> {
+                    if (!closed) {
+                        if (isSilentlyClosed()) {
+                            onClose();
+                        } else if (shouldClose()) {
+                            trader.closeInventory();
+                        }
+                    }
+
+                    if (closed) {
+                        task.cancel();
+                    }
+                },
+                this::onClose, 1, 1
+        );
     }
 
     private ItemStack createNonButton() {
@@ -154,11 +176,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     public void onClick(int slot) {
         var villager = getVillager();
 
-        if (villager == null ||
-                villager.isDead() ||
-                !villager.getWorld().equals(trader.getWorld()) ||
-                villager.getLocation().distanceSquared(trader.getLocation()) > 100 ||
-                !trader.equals(villager.getTrader())) {
+        if (shouldClose(villager)) {
             trader.closeInventory();
             return;
         }
@@ -214,13 +232,19 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     public void onClose() {
+        if (this.closed) {
+            return;
+        }
+
+        this.closed = true;
+
         var villager = getVillagerUnsafe();
 
         if (villager != null) {
             if (Bukkit.isOwnedByCurrentRegion(villager)) {
-                NMSUtil.stopTrading(villager);
+                tryStopTrading(villager);
             } else {
-                villager.getScheduler().run(JavaPlugin.getPlugin(BoxTradeStickPlugin.class), task -> NMSUtil.stopTrading(villager), null);
+                villager.getScheduler().run(JavaPlugin.getPlugin(BoxTradeStickPlugin.class), task -> tryStopTrading(), null);
             }
         }
     }
@@ -246,5 +270,36 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
     private int getScroll(int maxScroll, @NotNull TradeStickData data) {
         return Math.max(0, Math.min(maxScroll, data.getScroll(trader.getUniqueId())));
+    }
+
+    private boolean isSilentlyClosed() {
+        return !closed && this != MerchantRecipesGUI.fromTopInventory(trader.getOpenInventory().getTopInventory());
+    }
+
+    private boolean shouldClose() {
+        return shouldClose(getVillager());
+    }
+
+    @Contract("null -> true")
+    private boolean shouldClose(@Nullable AbstractVillager villager) {
+        return villager == null ||
+                villager.isDead() ||
+                !villager.getWorld().equals(trader.getWorld()) ||
+                100 < villager.getLocation().distanceSquared(trader.getLocation()) ||
+                !trader.equals(villager.getTrader());
+    }
+
+    private void tryStopTrading() {
+        var villager = getVillager();
+
+        if (villager != null) {
+            tryStopTrading(villager);
+        }
+    }
+
+    private void tryStopTrading(@NotNull AbstractVillager villager) {
+        if (trader.equals(villager.getTrader())) {
+            NMSUtil.stopTrading(villager);
+        }
     }
 }

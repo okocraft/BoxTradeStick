@@ -10,36 +10,54 @@ import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftAbstractVillager;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftVillager;
+import org.bukkit.craftbukkit.v1_20_R1.entity.CraftWanderingTrader;
 import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftMerchant;
 import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftMerchantRecipe;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.WanderingTrader;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantRecipe;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class NMSUtil {
 
-    public static void processTrade(Player player, Merchant merchant, MerchantRecipe merchantOffer,
+    public static void processTrade(Player player, AbstractVillager abstractVillager, MerchantRecipe merchantOffer,
                                     PlayerPurchaseEvent event) {
-        processTrade(merchant, merchantOffer, event);
+        processTrade(abstractVillager, merchantOffer, event);
         player.incrementStatistic(Statistic.TRADED_WITH_VILLAGER);
-        if (merchant instanceof Villager villager) {
+
+        if (abstractVillager instanceof Villager villager) {
             villager.setVillagerExperience(villager.getVillagerExperience() + merchantOffer.getVillagerExperience());
         }
     }
 
-    public static void startTrading(Merchant merchant, Player player) {
-        if (merchant instanceof Villager villager) {
-            updateSpecialPrices(player, villager);
+    public static @Nullable AbstractVillager getVillagerFromMerchant(@NotNull Merchant merchant) {
+        if (merchant instanceof AbstractVillager abstractVillager) {
+            return abstractVillager;
+        } else if (merchant instanceof CraftMerchant craftMerchant &&
+                craftMerchant.getMerchant() instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager &&
+                abstractVillager.getBukkitEntity() instanceof AbstractVillager bukkitEntity) {
+            return bukkitEntity;
+        } else {
+            return null;
         }
-        net.minecraft.world.item.trading.Merchant merchantHandle = getMerchantHandle(merchant);
-        if (merchantHandle == null) {
+    }
+
+    public static void startTrading(Player player, AbstractVillager abstractVillager) {
+        if (!(player instanceof CraftPlayer craftPlayer)) {
             return;
         }
-        merchantHandle.setTradingPlayer(((CraftPlayer) player).getHandle());
+
+        if (abstractVillager instanceof CraftVillager villager) {
+            updateSpecialPrices(craftPlayer, villager);
+            villager.getHandle().setTradingPlayer(craftPlayer.getHandle());
+        } else if (abstractVillager instanceof CraftWanderingTrader wanderingTrader) {
+            wanderingTrader.getHandle().setTradingPlayer(craftPlayer.getHandle());
+        }
     }
 
     public static boolean simulateMobInteract(Player player, AbstractVillager abstractVillager, EquipmentSlot hand) {
@@ -47,14 +65,21 @@ public class NMSUtil {
             return false;
         }
 
-        if (!(abstractVillager instanceof Villager villager)) {
-            return true;
+        if (abstractVillager instanceof Villager villager) {
+            return simulateMobInteract(player, villager, hand);
+        } else if (abstractVillager instanceof WanderingTrader wanderingTrader) {
+            return simulateMobInteract(player, wanderingTrader, hand);
+        } else {
+            return false; // unsupported villager type
         }
+    }
 
+    // See: net.minecraft.world.entity.npc.Villager#mobInteract
+    private static boolean simulateMobInteract(Player player, Villager villager, EquipmentSlot hand) {
         if (!villager.isAdult()) {
             setUnhappy(villager);
+            return false;
         } else {
-
             boolean noRecipe = villager.getRecipeCount() == 0;
 
             if (hand == EquipmentSlot.HAND) {
@@ -65,45 +90,35 @@ public class NMSUtil {
                 player.incrementStatistic(Statistic.TALKED_TO_VILLAGER);
             }
 
-            if (!noRecipe) {
-                startTrading(villager, player);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static void stopTrading(Merchant merchant) {
-        net.minecraft.world.item.trading.Merchant merchantHandle = getMerchantHandle(merchant);
-        if (merchantHandle != null) {
-            merchantHandle.setTradingPlayer(null);
+            return !noRecipe;
         }
     }
 
-    private static void processTrade(Merchant merchant, MerchantRecipe merchantOffer, PlayerPurchaseEvent event) {
-        net.minecraft.world.item.trading.Merchant minecraftMerchant = getMerchantHandle(merchant);
-        if (minecraftMerchant == null) {
-            return;
+    // See: net.minecraft.world.entity.npc.WanderingTrader#mobInteract
+    private static boolean simulateMobInteract(Player player, WanderingTrader wanderingTrader, EquipmentSlot hand) {
+        if (hand == EquipmentSlot.HAND) {
+            player.incrementStatistic(Statistic.TALKED_TO_VILLAGER);
         }
-        MerchantOffer minecraftMerchantOffer = CraftMerchantRecipe.fromBukkit(merchantOffer).toMinecraft();
 
-        minecraftMerchant.processTrade(minecraftMerchantOffer, event);
+        return wanderingTrader.getRecipeCount() != 0;
     }
 
-    @Nullable
-    private static net.minecraft.world.item.trading.Merchant getMerchantHandle(Merchant merchant) {
-        if (merchant instanceof CraftAbstractVillager villager) {
-            return villager.getHandle();
-        } else if (merchant instanceof CraftMerchant craftMerchant) {
-            return craftMerchant.getMerchant();
-        } else {
-            return null;
+    public static void stopTrading(AbstractVillager villager) {
+        if (villager instanceof CraftAbstractVillager craftVillager) {
+            craftVillager.getHandle().setTradingPlayer(null);
         }
     }
 
-    private static void updateSpecialPrices(Player player, Villager villager) {
-        var villagerHandle = ((CraftVillager) villager).getHandle();
-        var playerHandle = ((CraftPlayer) player).getHandle();
+    private static void processTrade(AbstractVillager villager, MerchantRecipe merchantOffer, PlayerPurchaseEvent event) {
+        if (villager instanceof CraftAbstractVillager craftAbstractVillager) {
+            MerchantOffer minecraftMerchantOffer = CraftMerchantRecipe.fromBukkit(merchantOffer).toMinecraft();
+            craftAbstractVillager.getHandle().processTrade(minecraftMerchantOffer, event);
+        }
+    }
+
+    private static void updateSpecialPrices(CraftPlayer player, CraftVillager villager) {
+        var playerHandle = player.getHandle();
+        var villagerHandle = villager.getHandle();
 
         int i = villagerHandle.getPlayerReputation(playerHandle);
 
