@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerListener implements Listener {
 
     private static final boolean ENTITY_SCHEDULER;
+    private static final long TRADE_COOLDOWN_TIME = 1000L;
+    private static final long TRADE_COOLDOWN_TIME_AFTER_THE_2ND = 500L;
 
     static {
         boolean entityScheduler;
@@ -47,7 +49,7 @@ public class PlayerListener implements Listener {
     }
 
     private final BoxTradeStickPlugin plugin;
-    private final Map<UUID, Long> hitTradeCooldown = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> tradeCooldownEndTimeMap = new ConcurrentHashMap<>();
     private volatile boolean onEntityDamageByEntityEvent = false;
 
     PlayerListener(BoxTradeStickPlugin plugin) {
@@ -56,7 +58,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        hitTradeCooldown.remove(event.getPlayer().getUniqueId());
+        tradeCooldownEndTimeMap.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -79,9 +81,13 @@ public class PlayerListener implements Listener {
 
         event.setCancelled(true);
 
-        long cooldown = hitTradeCooldown.getOrDefault(player.getUniqueId(), 0L) + 1000L - System.currentTimeMillis();
-        if (0 < cooldown) {
-            player.sendActionBar(Translatables.HIT_TRADING_COOLDOWN.apply(cooldown));
+        if (!MerchantRecipesGUI.canTradeByStick(villager)) {
+            return;
+        }
+
+        long cooldownTime = calcCooldownTime(player);
+        if (cooldownTime > 0) {
+            player.sendActionBar(Translatables.HIT_TRADING_COOLDOWN.apply(cooldownTime));
             return;
         }
 
@@ -96,19 +102,16 @@ public class PlayerListener implements Listener {
         }
 
         MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
-        int selectedOfferIndex = gui.getCurrentSelected();
-        if (selectedOfferIndex == -1) {
+        int[] selectedIndices = gui.getCurrentSelectedIndices();
+        if (selectedIndices.length == 0) {
             player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
             return;
         }
 
-        int traded = gui.tradeForMaxUses(gui.getCurrentSelected());
-        if (traded > 0) {
-            player.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);
-            hitTradeCooldown.put(player.getUniqueId(), System.currentTimeMillis());
-        } else {
-            player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-            player.sendActionBar(Translatables.OUT_OF_STOCK);
+        int succeededCount = gui.tradeForMaxUses(selectedIndices);
+        if (succeededCount > 0) {
+            long cooldownEndTime = calcCooldownEndTime(succeededCount);
+            tradeCooldownEndTimeMap.put(player.getUniqueId(), cooldownEndTime);
         }
 
         NMSUtil.stopTrading(villager);
@@ -136,7 +139,9 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
+        if (MerchantRecipesGUI.canTradeByStick(abstractVillager)) {
+            player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
+        }
     }
 
     @EventHandler
@@ -212,13 +217,23 @@ public class PlayerListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
-        if (gui != null && gui.getMerchant() instanceof AbstractVillager villager) {
+        if (gui != null) {
+            AbstractVillager villager = gui.getMerchant();
             if (ENTITY_SCHEDULER) {
                 villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
             } else {
                 NMSUtil.stopTrading(villager);
             }
         }
+    }
+
+    private long calcCooldownEndTime(int tradeCount) {
+        return System.currentTimeMillis() + TRADE_COOLDOWN_TIME + TRADE_COOLDOWN_TIME_AFTER_THE_2ND * (tradeCount - 1);
+    }
+
+    private long calcCooldownTime(Player player) {
+        long cooldownTime = tradeCooldownEndTimeMap.getOrDefault(player.getUniqueId(), 0L);
+        return cooldownTime - System.currentTimeMillis();
     }
 
     private boolean isTrading(Merchant merchant) {

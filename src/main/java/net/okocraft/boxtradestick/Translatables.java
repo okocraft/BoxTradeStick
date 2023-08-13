@@ -62,6 +62,10 @@ public final class Translatables {
                     Component.translatable(result)
             );
 
+    public static final DoubleArgument<Integer, Integer> MULTIPLE_RESULT_TIMES =
+            (traded, kinds) -> Component.translatable("multiple-result-times", NamedTextColor.YELLOW)
+                    .args(Component.text(traded), Component.text(kinds));
+
     public static final List<Component> GUI_RECIPE_SELECTED_LORE =
             List.of(
                     nonItalic("gui.recipe-selected-lore-1").color(NamedTextColor.GRAY),
