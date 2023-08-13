@@ -63,8 +63,8 @@ public final class Translatables {
             );
 
     public static final DoubleArgument<Integer, Integer> MULTIPLE_RESULT_TIMES =
-            (kinds, traded) -> Component.translatable("multiple-result-times", NamedTextColor.YELLOW)
-                    .args(Component.text(kinds), Component.text(traded));
+            (traded, kinds) -> Component.translatable("multiple-result-times", NamedTextColor.YELLOW)
+                    .args(Component.text(traded), Component.text(kinds));
 
     public static final List<Component> GUI_RECIPE_SELECTED_LORE =
             List.of(

@@ -239,8 +239,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
         } else {
 
             trader.sendActionBar(Translatables.MULTIPLE_RESULT_TIMES.apply(
-                    succeeded.length,
-                    Arrays.stream(succeeded).mapToInt(TradeResult::getCount).sum()
+                    Arrays.stream(succeeded).mapToInt(TradeResult::getCount).sum(),
+                    succeeded.length
             ));
         }
         return succeeded.length;

@@ -12,5 +12,5 @@ gui:
   result-name-out-of-stock: "{0} (Out of stock!)"
   result-bulk-trade: "Bulk trade {0}"
 result-times: "Traded {0} times and got {1} {2}s"
-multiple-result-times: "total of {2} traded the {1} kind of items."
+multiple-result-times: "total of {0} traded the {1} kind of items."
 hit-trading-cooldown: "Hit trading is now in cooldown for {0} second."

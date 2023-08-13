@@ -12,5 +12,5 @@ gui:
   result-name-out-of-stock: "{0} (売り切れ！)"
   result-bulk-trade: "{0}を一括取引"
 result-times: "{0}回交易し、{2}を{1}個手に入れました。"
-multiple-result-times: "{0}種類のアイテムを合計{1}回交易しました。"
+multiple-result-times: "{1}種類のアイテムを合計{0}回交易しました。"
 hit-trading-cooldown: "殴り交易はクールダウン中です。(あと{0}秒)"
