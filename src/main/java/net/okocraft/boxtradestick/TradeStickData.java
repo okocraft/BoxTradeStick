@@ -2,6 +2,10 @@ package net.okocraft.boxtradestick;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.persistence.PersistentDataAdapterContext;
@@ -11,11 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-
 public class TradeStickData {
 
     private static final NamespacedKey TRADE_STICK_DATA_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:trade_stick_data"));
@@ -23,6 +22,11 @@ public class TradeStickData {
 
     public static @NotNull TradeStickData loadFrom(@NotNull AbstractVillager villager) {
         var data = villager.getPersistentDataContainer().get(TRADE_STICK_DATA_KEY, TRADE_STICK_DATA_TYPE);
+
+        if (data != null && data.needUpdateVillager) {
+            data.saveTo(villager);
+        }
+
         return data != null ? data : new TradeStickData();
     }
 
@@ -33,7 +37,7 @@ public class TradeStickData {
     private static final NamespacedKey OFFER_NUMBER_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:offer_number"));
     private static final NamespacedKey SCROLL_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:scroll"));
 
-    private static final int SHIFTS_FOR_SCROLL = 27;
+    private static final int SHIFTS_FOR_SCROLL = Integer.SIZE - 5;
     private static final int MASK_TO_CLEAR_SCROLL = (1 << SHIFTS_FOR_SCROLL) - 1;
     private static final int[] EMPTY_ARRAY = new int[0];
 
@@ -51,9 +55,17 @@ public class TradeStickData {
      */
     private final Object2IntMap<UUID> playerDataMap = new Object2IntOpenHashMap<>();
 
+    /*
+      This boolean value indicates whether the villager's data needs to be updated after data is loaded from the villager.
+
+      This value will be true when data is loaded with legacy data that contains OFFER_NUMBER_KEY or SCROLL_KEY.
+      When this value is true, the loadFrom method performs a save operation immediately after loading.
+     */
+    private boolean needUpdateVillager;
+
     public boolean isSelected(@NotNull UUID uuid, int index) {
         if (index < 0 || MAXIMUM_INDEX < index) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("index must be between 0 and " + MAXIMUM_INDEX + " (inclusive), but got " + index);
         }
 
         int state = playerDataMap.getInt(uuid);
@@ -84,7 +96,7 @@ public class TradeStickData {
 
     public void toggleOfferSelection(@NotNull UUID uuid, int index) {
         if (index < 0 || MAXIMUM_INDEX < index) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("index must be between 0 and " + MAXIMUM_INDEX + " (inclusive), but got " + index);
         }
 
         int state = playerDataMap.getInt(uuid);
@@ -100,7 +112,7 @@ public class TradeStickData {
 
     public void setScroll(@NotNull UUID uuid, int scroll) {
         if (scroll < 0 || MAXIMUM_SCROLL < scroll) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("scroll must be between 0 and " + MAXIMUM_SCROLL + " (inclusive), but got " + scroll);
         }
 
         int state = playerDataMap.getInt(uuid);
@@ -137,10 +149,16 @@ public class TradeStickData {
             List<PersistentDataContainer> containerList = new ArrayList<>();
 
             for (Object2IntMap.Entry<UUID> entry : complex.playerDataMap.object2IntEntrySet()) {
+                int value = entry.getIntValue();
+
+                if (value == 0) {
+                    continue;
+                }
+
                 PersistentDataContainer container = context.newPersistentDataContainer();
 
                 container.set(ID_KEY, STRING, entry.getKey().toString());
-                container.set(VALUE_KEY, INTEGER, entry.getIntValue());
+                container.set(VALUE_KEY, INTEGER, value);
 
                 containerList.add(container);
             }
@@ -161,20 +179,24 @@ public class TradeStickData {
                 }
 
                 if (container.has(OFFER_NUMBER_KEY) || container.has(SCROLL_KEY)) {
-                    Integer offerNumber = container.get(OFFER_NUMBER_KEY, INTEGER);
+                    int offerNumber = container.getOrDefault(OFFER_NUMBER_KEY, INTEGER, -1);
 
-                    if (offerNumber != null) {
+                    if (0 <= offerNumber && offerNumber <= MAXIMUM_INDEX) {
                         data.toggleOfferSelection(uuid, offerNumber);
                     }
 
-                    Integer scroll = container.get(SCROLL_KEY, INTEGER);
+                    int scroll = container.getOrDefault(SCROLL_KEY, INTEGER, 0);
 
-                    if (scroll != null) {
+                    if (0 < scroll && scroll <= MAXIMUM_SCROLL) {
                         data.setScroll(uuid, scroll);
                     }
+
+                    data.needUpdateVillager = true;
                 } else {
                     int value = container.getOrDefault(VALUE_KEY, INTEGER, 0);
-                    data.playerDataMap.put(uuid, value);
+                    if (value != 0) {
+                        data.playerDataMap.put(uuid, value);
+                    }
                 }
             }
 

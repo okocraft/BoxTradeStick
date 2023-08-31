@@ -1,60 +1,31 @@
 package net.okocraft.boxtradestick;
 
-import io.papermc.paper.event.entity.EntityMoveEvent;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
-import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityPortalEnterEvent;
-import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantInventory;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerListener implements Listener {
 
-    private static final boolean ENTITY_SCHEDULER;
     private static final long TRADE_COOLDOWN_TIME = 1000L;
     private static final long TRADE_COOLDOWN_TIME_AFTER_THE_2ND = 500L;
 
-    static {
-        boolean entityScheduler;
-
-        try {
-            Villager.class.getMethod("getScheduler");
-            entityScheduler = true;
-        } catch (NoSuchMethodException e) {
-            entityScheduler = false;
-        }
-
-        ENTITY_SCHEDULER = entityScheduler;
-    }
-
-    private final BoxTradeStickPlugin plugin;
     private final Map<UUID, Long> tradeCooldownEndTimeMap = new ConcurrentHashMap<>();
     private volatile boolean onEntityDamageByEntityEvent = false;
-
-    PlayerListener(BoxTradeStickPlugin plugin) {
-        this.plugin = plugin;
-    }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -71,17 +42,13 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        if (!isTrading(villager)) {
-            NMSUtil.stopTrading(villager);
-        }
-
         if (!BoxUtil.checkPlayerCondition(player, "boxtradestick.trade")) {
             return;
         }
 
         event.setCancelled(true);
 
-        if (!MerchantRecipesGUI.canTradeByStick(villager)) {
+        if (!TradeProcessor.canTradeByStick(villager)) {
             return;
         }
 
@@ -97,18 +64,15 @@ public class PlayerListener implements Listener {
         }
         onEntityDamageByEntityEvent = false;
 
+        checkCurrentTrader(villager);
+
         if (!NMSUtil.simulateMobInteract(player, villager, EquipmentSlot.HAND)) {
             return;
         }
 
-        MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
-        int[] selectedIndices = gui.getCurrentSelectedIndices();
-        if (selectedIndices.length == 0) {
-            player.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-            return;
-        }
+        NMSUtil.startTrading(player, villager);
 
-        int succeededCount = gui.tradeForMaxUses(selectedIndices);
+        int succeededCount = TradeProcessor.processSelectedOffersForMaxUses(player, villager);
         if (succeededCount > 0) {
             long cooldownEndTime = calcCooldownEndTime(succeededCount);
             tradeCooldownEndTimeMap.put(player.getUniqueId(), cooldownEndTime);
@@ -119,12 +83,8 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        if (onEntityDamageByEntityEvent || !(event.getRightClicked() instanceof AbstractVillager abstractVillager)) {
+        if (onEntityDamageByEntityEvent || !(event.getRightClicked() instanceof AbstractVillager villager) || !TradeProcessor.canTradeByStick(villager)) {
             return;
-        }
-
-        if (!isTrading(abstractVillager)) {
-            NMSUtil.stopTrading(abstractVillager);
         }
 
         Player player = event.getPlayer();
@@ -134,71 +94,14 @@ public class PlayerListener implements Listener {
 
         event.setCancelled(true);
 
-        if (abstractVillager instanceof Villager villager
-                && !NMSUtil.simulateMobInteract(player, villager, event.getHand())) {
-            return;
-        }
+        checkCurrentTrader(villager);
 
-        if (MerchantRecipesGUI.canTradeByStick(abstractVillager)) {
-            player.openInventory(new MerchantRecipesGUI(player, abstractVillager).getInventory());
-        }
-    }
+        if (NMSUtil.simulateMobInteract(player, villager, event.getHand())) {
+            NMSUtil.startTrading(player, villager);
 
-    @EventHandler
-    public void onEntityTeleport(EntityTeleportEvent event) {
-        if (event.getEntity() instanceof Merchant merchant) {
-            HumanEntity trader = merchant.getTrader();
-            if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())) {
-                trader.closeInventory();
-            }
-        }
-    }
-
-    @EventHandler
-    public void onVillagerDeath(EntityDeathEvent event) {
-        if (!(event.getEntity() instanceof AbstractVillager villager)) {
-            return;
-        }
-
-        for (Player p : plugin.getServer().getOnlinePlayers()) {
-            MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(p.getOpenInventory().getTopInventory());
-            if (gui != null && villager.equals(gui.getMerchant())) {
-                p.closeInventory();
-            }
-        }
-    }
-
-    @EventHandler
-    public void onEntityTeleport(EntityPortalEnterEvent event) {
-        if (event.getEntity() instanceof Merchant merchant) {
-            HumanEntity trader = merchant.getTrader();
-            if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())) {
-                trader.closeInventory();
-            }
-        }
-    }
-
-    @EventHandler
-    public void onEntityMove(EntityMoveEvent event) {
-        if (event.getEntity() instanceof Merchant merchant) {
-            HumanEntity trader = merchant.getTrader();
-            if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())
-                    && trader.getLocation().distanceSquared(event.getEntity().getLocation()) > 100) {
-                trader.closeInventory();
-            }
-        }
-    }
-
-    @EventHandler
-    public void onEntityMove(VehicleMoveEvent event) {
-        for (Entity passenger : event.getVehicle().getPassengers()) {
-            if (passenger instanceof Merchant merchant) {
-                HumanEntity trader = merchant.getTrader();
-                if (trader != null && MerchantRecipesGUI.isGUI(trader.getOpenInventory().getTopInventory())
-                        && trader.getLocation().distanceSquared(passenger.getLocation()) > 100) {
-                    trader.closeInventory();
-                }
-            }
+            MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
+            player.openInventory(gui.getInventory());
+            gui.scheduleWatchingTask();
         }
     }
 
@@ -217,13 +120,9 @@ public class PlayerListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
+
         if (gui != null) {
-            AbstractVillager villager = gui.getMerchant();
-            if (ENTITY_SCHEDULER) {
-                villager.getScheduler().run(plugin, task -> NMSUtil.stopTrading(villager), null);
-            } else {
-                NMSUtil.stopTrading(villager);
-            }
+            gui.onClose();
         }
     }
 
@@ -236,27 +135,28 @@ public class PlayerListener implements Listener {
         return cooldownTime - System.currentTimeMillis();
     }
 
-    private boolean isTrading(Merchant merchant) {
-        HumanEntity trader = merchant.getTrader();
+    private void checkCurrentTrader(AbstractVillager villager) {
+        HumanEntity trader = villager.getTrader();
 
         if (trader == null) {
-            return false;
+            return;
         }
 
         Inventory inv = trader.getOpenInventory().getTopInventory();
         MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(inv);
-        Merchant actuallyTrading;
 
-        if (gui != null) {
-            actuallyTrading = gui.getMerchant();
-        } else if (inv instanceof MerchantInventory merchantInventory) {
-            actuallyTrading = merchantInventory.getMerchant();
-        } else {
-            return false;
+        if (gui != null && villager.equals(gui.getVillager())) {
+            return;
         }
 
-        return actuallyTrading instanceof AbstractVillager villager &&
-                Bukkit.isOwnedByCurrentRegion(villager) &&
-                merchant.equals(villager);
+        if (inv instanceof MerchantInventory merchantInventory) {
+            var merchant = NMSUtil.getVillagerFromMerchant(merchantInventory.getMerchant());
+
+            if (merchant != null && Bukkit.isOwnedByCurrentRegion(merchant) && merchant.equals(villager)) {
+                return;
+            }
+        }
+
+        NMSUtil.stopTrading(villager); // cleanup current trader
     }
 }

@@ -79,7 +79,7 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
     }
 
     @Override
