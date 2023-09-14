@@ -4,11 +4,7 @@ import io.papermc.paper.event.player.PlayerPurchaseEvent;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import java.util.ArrayList;
 import java.util.List;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.okocraft.box.api.model.item.BoxItem;
-import net.okocraft.box.api.transaction.InventoryTransaction;
-import net.okocraft.box.api.transaction.TransactionResult;
-import net.okocraft.box.storage.api.factory.item.BoxItemFactory;
+import net.okocraft.box.api.util.InventoryUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Player;
@@ -121,25 +117,10 @@ public final class TradeProcessor {
 
         var result = BoxUtil.getBoxItem(resultBukkit);
         if (result.isEmpty()) {
-            // painful api usage!
-            BoxItem resultBoxItem = BoxItemFactory.createCustomItem(
-                    resultBukkit.clone(),
-                    PlainTextComponentSerializer.plainText().serialize(resultBukkit.displayName()),
-                    -1
-            );
-            TransactionResult transaction = InventoryTransaction.withdraw(
-                    trader.getInventory(),
-                    resultBoxItem,
-                    resultBukkit.getAmount()
-            );
-            ItemStack drop = resultBukkit.clone();
-            if (transaction.getType().isModified()) {
-                if (drop.getAmount() != transaction.getAmount()) {
-                    drop.setAmount(drop.getAmount() - transaction.getAmount());
-                    drop(trader, drop);
-                }
-            } else {
-                drop(trader, drop);
+            int remaining = InventoryUtil.putItems(trader.getInventory(), resultBukkit, resultBukkit.getAmount());
+
+            if (0 < remaining) {
+                drop(trader, resultBukkit.asQuantity(remaining));
             }
         } else {
             // stock is definitely present.
