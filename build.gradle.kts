@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.20.1-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.20.2-R0.1-SNAPSHOT")
 
     implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
@@ -26,7 +26,7 @@ dependencies {
     compileOnly("net.okocraft.box:box-stick-feature:5.4.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-    testRuntimeOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+    testRuntimeOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
