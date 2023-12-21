@@ -95,7 +95,7 @@ public final class BoxUtil {
             return false;
         }
 
-        if (BoxProvider.get().isDisabledWorld(player)) {
+        if (!BoxProvider.get().canUseBox(player)) {
             return false;
         }
 
