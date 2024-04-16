@@ -4,8 +4,9 @@ import io.papermc.paper.event.player.PlayerPurchaseEvent;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import java.util.ArrayList;
 import java.util.List;
-
+import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import net.okocraft.box.api.BoxAPI;
+import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.util.InventoryUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
@@ -85,6 +86,10 @@ public final class TradeProcessor {
     }
 
     private static boolean trade0(@NotNull Player trader, @NotNull AbstractVillager villager, int recipeIndex) {
+        if (!BoxAPI.api().getBoxPlayerMap().isLoaded(trader)) {
+            return false;
+        }
+
         var merchantOffer = villager.getRecipe(recipeIndex);
 
         if (merchantOffer.getUses() >= merchantOffer.getMaxUses()) {
@@ -98,31 +103,59 @@ public final class TradeProcessor {
         }
 
         merchantOffer = event.getTrade();
-        List<ItemStack> ingredients = new ArrayList<>(merchantOffer.getIngredients());
-        if (ingredients.size() >= 1) {
-            ingredients.set(0, merchantOffer.getAdjustedIngredient1());
-        }
-        var cause = new BoxUtil.Trade(trader, merchantOffer);
-        if (!BoxUtil.tryConsumingStockMulti(trader, ingredients, cause)) {
+
+        var ingredients = merchantOffer.getIngredients();
+
+        if (ingredients.isEmpty()) {
             return false;
         }
 
-        var resultBukkit = merchantOffer.getResult();
+        var ingredientMap = new Object2IntArrayMap<BoxItem>(ingredients.size());
 
-        var result = BoxUtil.getBoxItem(resultBukkit);
-        if (result.isEmpty()) {
-            int remaining = InventoryUtil.putItems(trader.getInventory(), resultBukkit, resultBukkit.getAmount());
+        for (int i = 0, size = ingredients.size(); i < size; i++) {
+            var ingredient = ingredients.get(i);
 
-            if (0 < remaining) {
-                drop(trader, resultBukkit.asQuantity(remaining));
+            if (ingredient.getType().isAir()) {
+                continue;
             }
-        } else {
-            // stock is definitely present.
-            BoxUtil.getStock(trader).ifPresent(stock -> stock.increase(result.get(), resultBukkit.getAmount(), cause));
+
+            var boxItem = BoxAPI.api().getItemManager().getBoxItem(ingredient);
+
+            if (boxItem.isEmpty()) {
+                return false;
+            } else if (i == 0) {
+                var adjusted = merchantOffer.getAdjustedIngredient1();
+                if (adjusted != null) {
+                    ingredientMap.put(boxItem.get(), adjusted.getAmount());
+                } else {
+                    return false;
+                }
+            } else {
+                ingredientMap.put(boxItem.get(), ingredient.getAmount());
+            }
         }
 
-        NMSUtil.processTrade(trader, villager, merchantOffer, event);
-        return true;
+        var stockHolder = BoxAPI.api().getBoxPlayerMap().get(trader).getCurrentStockHolder();
+        var cause = new BoxUtil.Trade(trader, merchantOffer);
+
+        if (stockHolder.decreaseIfPossible(ingredientMap, cause)) {
+            var resultBukkit = merchantOffer.getResult();
+            var result = BoxUtil.getBoxItem(resultBukkit);
+            if (result.isEmpty()) {
+                int remaining = InventoryUtil.putItems(trader.getInventory(), resultBukkit, resultBukkit.getAmount());
+
+                if (0 < remaining) {
+                    drop(trader, resultBukkit.asQuantity(remaining));
+                }
+            } else {
+                stockHolder.increase(result.get(), resultBukkit.getAmount(), cause);
+            }
+
+            NMSUtil.processTrade(trader, villager, merchantOffer, event);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static void drop(Player player, ItemStack item) {

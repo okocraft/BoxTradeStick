@@ -3,7 +3,6 @@ package net.okocraft.boxtradestick;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.api.event.stockholder.stock.StockEvent;
 import net.okocraft.box.api.model.item.BoxItem;
@@ -25,34 +24,6 @@ public final class BoxUtil {
         }
 
         return Optional.of(playerMap.get(player).getCurrentStockHolder());
-    }
-
-    public static boolean tryConsumingStockMulti(Player player, List<ItemStack> items, Trade cause) {
-        var stock = getStock(player);
-        if (stock.isEmpty()) {
-            return false;
-        }
-
-        items = new ArrayList<>(items);
-        items.removeIf(i -> i.getType().isAir());
-
-        var requiredItems = new ConcurrentHashMap<BoxItem, Integer>();
-        for (ItemStack ingredient: items) {
-            var boxItem = Optional.ofNullable(ingredient).flatMap(BoxUtil::getBoxItem);
-            if (boxItem.isEmpty()) {
-                return false;
-            }
-            if (stock.get().getAmount(boxItem.get()) < ingredient.getAmount()) {
-                return false;
-            }
-            requiredItems.put(boxItem.get(), ingredient.getAmount());
-        }
-
-        for (var entry : requiredItems.entrySet()) {
-            stock.get().decrease(entry.getKey(), entry.getValue(), cause);
-        }
-
-        return true;
     }
 
     public static int calcConsumedAmount(Player player, List<ItemStack> items) {
