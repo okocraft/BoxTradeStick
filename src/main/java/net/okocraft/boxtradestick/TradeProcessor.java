@@ -136,7 +136,7 @@ public final class TradeProcessor {
         }
 
         var stockHolder = BoxAPI.api().getBoxPlayerMap().get(trader).getCurrentStockHolder();
-        var cause = new BoxUtil.Trade(trader, merchantOffer);
+        var cause = new TradeCause(trader, merchantOffer);
 
         if (stockHolder.decreaseIfPossible(ingredientMap, cause)) {
             var resultBukkit = merchantOffer.getResult();
