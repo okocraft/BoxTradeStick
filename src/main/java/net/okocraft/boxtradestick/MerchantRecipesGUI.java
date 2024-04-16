@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.okocraft.box.api.BoxAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -159,7 +160,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
             ItemUtil.addLoreOfStock(trader, recipe.getResult(), result, true);
             inventory.setItem(row * 9 + 5, result.clone());
             ItemUtil.displayName(trader.locale(), result, Translatables.GUI_RESULT_BULK_TRADE.apply(result));
-            result.setAmount(Math.max(1, Math.min(leftUses, BoxUtil.calcConsumedAmount(trader, ingredients))));
+            result.setAmount(Math.max(1, Math.min(leftUses, this.calcConsumedAmount(ingredients))));
         } else {
             result = Objects.requireNonNull(ItemUtil.create(
                     trader.locale(),
@@ -301,5 +302,30 @@ public class MerchantRecipesGUI implements InventoryHolder {
         if (trader.equals(villager.getTrader())) {
             NMSUtil.stopTrading(villager);
         }
+    }
+
+    private int calcConsumedAmount(List<ItemStack> ingredients) {
+        if (!BoxAPI.api().getBoxPlayerMap().isLoaded(this.trader)) {
+            return 0;
+        }
+
+        var stockHolder = BoxAPI.api().getBoxPlayerMap().get(this.trader).getCurrentStockHolder();
+        int consumingAmount = Integer.MAX_VALUE;
+
+        for (var ingredient : ingredients) {
+            if (ingredient.getType().isAir()) {
+                continue;
+            }
+
+            var boxItem = BoxAPI.api().getItemManager().getBoxItem(ingredient);
+
+            if (boxItem.isEmpty()) {
+                return 0;
+            } else {
+                consumingAmount = Math.min(consumingAmount, stockHolder.getAmount(boxItem.get()) / ingredient.getAmount());
+            }
+        }
+
+        return consumingAmount;
     }
 }
