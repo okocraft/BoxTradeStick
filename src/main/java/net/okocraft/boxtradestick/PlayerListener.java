@@ -25,7 +25,7 @@ public class PlayerListener implements Listener {
     private static final long TRADE_COOLDOWN_TIME_AFTER_THE_2ND = 500L;
 
     private final Map<UUID, Long> tradeCooldownEndTimeMap = new ConcurrentHashMap<>();
-    private volatile boolean onEntityDamageByEntityEvent = false;
+    private final ThreadLocal<PlayerInteractEntityEvent> calledPlayerInteractEntityEvent = new ThreadLocal<>();
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -58,11 +58,12 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        onEntityDamageByEntityEvent = true;
-        if (!new PlayerInteractEntityEvent(player, villager).callEvent()) {
+        var playerInteractEvent = new PlayerInteractEntityEvent(player, villager);
+        this.calledPlayerInteractEntityEvent.set(playerInteractEvent);
+        if (!playerInteractEvent.callEvent()) {
             return;
         }
-        onEntityDamageByEntityEvent = false;
+        this.calledPlayerInteractEntityEvent.remove();
 
         checkCurrentTrader(villager);
 
@@ -83,7 +84,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        if (onEntityDamageByEntityEvent || !(event.getRightClicked() instanceof AbstractVillager villager) || !TradeProcessor.canTradeByStick(villager)) {
+        if (this.calledPlayerInteractEntityEvent.get() == event || !(event.getRightClicked() instanceof AbstractVillager villager) || !TradeProcessor.canTradeByStick(villager)) {
             return;
         }
 
