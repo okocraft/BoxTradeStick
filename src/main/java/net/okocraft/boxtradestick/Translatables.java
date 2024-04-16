@@ -5,9 +5,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.okocraft.box.api.BoxProvider;
 import net.okocraft.box.api.message.argument.DoubleArgument;
 import net.okocraft.box.api.message.argument.SingleArgument;
+import net.okocraft.box.api.BoxAPI;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -44,7 +44,7 @@ public final class Translatables {
                     .color(NamedTextColor.YELLOW);
 
     public static final DoubleArgument<Player, ItemStack> GUI_CURRENT_STOCK =
-            (player, item) -> BoxProvider.get().getItemManager()
+            (player, item) -> BoxAPI.api().getItemManager()
                     .getBoxItem(item)
                     .flatMap(i -> BoxUtil.getStock(player).map(stock -> stock.getAmount(i)))
                     .map(Translatables.GUI_CURRENT_STOCK_RAW::apply)

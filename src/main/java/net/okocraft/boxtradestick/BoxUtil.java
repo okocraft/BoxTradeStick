@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import net.okocraft.box.api.BoxProvider;
+import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.api.event.stockholder.stock.StockEvent;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.model.stock.StockHolder;
@@ -21,7 +21,7 @@ public final class BoxUtil {
     private BoxUtil() {}
 
     public static Optional<StockHolder> getStock(Player player) {
-        var playerMap = BoxProvider.get().getBoxPlayerMap();
+        var playerMap = BoxAPI.api().getBoxPlayerMap();
 
         if (!playerMap.isLoaded(player)) {
             return Optional.empty();
@@ -80,11 +80,11 @@ public final class BoxUtil {
     }
 
     public static Optional<BoxItem> getBoxItem(ItemStack item) {
-        return BoxProvider.get().getItemManager().getBoxItem(item);
+        return BoxAPI.api().getItemManager().getBoxItem(item);
     }
 
     public static BoxStickItem getBoxStickItem() {
-        return BoxProvider.get().getFeature(StickFeature.class)
+        return BoxAPI.api().getFeatureProvider().getFeature(StickFeature.class)
                 .orElseThrow(() -> new IllegalStateException("Failed to load boxStickItem."))
                 .getBoxStickItem();
     }
@@ -95,7 +95,7 @@ public final class BoxUtil {
             return false;
         }
 
-        if (!BoxProvider.get().canUseBox(player)) {
+        if (!BoxAPI.api().canUseBox(player)) {
             return false;
         }
 
