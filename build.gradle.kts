@@ -1,5 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     java
     id("io.papermc.paperweight.userdev") version "1.5.15"
@@ -28,23 +26,31 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
     testRuntimeOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.named("build") {
-    dependsOn(tasks.named("reobfJar"))
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
-tasks.named<Copy>("processResources") {
-    filesMatching(listOf("plugin.yml", "en.yml", "ja_JP.yml")) {
-        expand("projectVersion" to version)
+tasks {
+    build {
+        dependsOn(reobfJar)
     }
-}
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
+    processResources {
+        filesMatching(listOf("plugin.yml", "en.yml", "ja_JP.yml")) {
+            expand("projectVersion" to version)
+        }
+    }
 
-tasks.named<ShadowJar>("shadowJar") {
-    minimize()
-    relocate("com.github.siroshun09", "net.okocraft.boxtradestick.lib")
+    test {
+        useJUnitPlatform()
+    }
+
+    shadowJar {
+        minimize()
+        relocate("com.github.siroshun09", "net.okocraft.boxtradestick.lib")
+    }
 }
