@@ -4,6 +4,8 @@ import io.papermc.paper.event.player.PlayerPurchaseEvent;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.api.util.InventoryUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractVillager;
@@ -58,11 +60,7 @@ public final class TradeProcessor {
     }
 
     public static @Nullable TradeResult tradeForMaxUses(@NotNull Player trader, @NotNull AbstractVillager villager, int recipeIndex) {
-        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade")) {
-            return null;
-        }
-
-        if (recipeIndex < 0 || recipeIndex >= villager.getRecipeCount()) {
+        if (!canTrade(trader, villager, recipeIndex)) {
             return null;
         }
 
@@ -79,15 +77,11 @@ public final class TradeProcessor {
     }
 
     public static boolean trade(@NotNull Player trader, @NotNull AbstractVillager villager, int recipeIndex) {
-        if (!BoxUtil.checkPlayerCondition(trader, "boxtradestick.trade")) {
+        if (canTrade(trader, villager, recipeIndex)) {
+            return trade0(trader, villager, recipeIndex);
+        } else {
             return false;
         }
-
-        if (recipeIndex < 0 || recipeIndex >= villager.getRecipeCount()) {
-            return false;
-        }
-
-        return trade0(trader, villager, recipeIndex);
     }
 
     private static boolean trade0(@NotNull Player trader, @NotNull AbstractVillager villager, int recipeIndex) {
@@ -136,6 +130,13 @@ public final class TradeProcessor {
         player.getInventory().setItemInMainHand(item);
         player.dropItem(true);
         player.getInventory().setItemInMainHand(hand);
+    }
+
+    private static boolean canTrade(Player player, @NotNull AbstractVillager villager, int recipeIndex) {
+        return BoxAPI.api().canUseBox(player) &&
+               player.hasPermission("boxtradestick.trade") &&
+               0 <= recipeIndex &&
+               recipeIndex < villager.getRecipeCount();
     }
 
     private TradeProcessor() {

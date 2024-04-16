@@ -8,9 +8,6 @@ import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.api.event.stockholder.stock.StockEvent;
 import net.okocraft.box.api.model.item.BoxItem;
 import net.okocraft.box.api.model.stock.StockHolder;
-import net.okocraft.box.feature.stick.StickFeature;
-import net.okocraft.box.feature.stick.item.BoxStickItem;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
@@ -81,30 +78,6 @@ public final class BoxUtil {
 
     public static Optional<BoxItem> getBoxItem(ItemStack item) {
         return BoxAPI.api().getItemManager().getBoxItem(item);
-    }
-
-    public static BoxStickItem getBoxStickItem() {
-        return BoxAPI.api().getFeatureProvider().getFeature(StickFeature.class)
-                .orElseThrow(() -> new IllegalStateException("Failed to load boxStickItem."))
-                .getBoxStickItem();
-    }
-
-    public static boolean checkPlayerCondition(@NotNull Player player, @NotNull String permissionNode) {
-        if (player.getGameMode() != GameMode.ADVENTURE &&
-                player.getGameMode() != GameMode.SURVIVAL) {
-            return false;
-        }
-
-        if (!BoxAPI.api().canUseBox(player)) {
-            return false;
-        }
-
-        if (!player.hasPermission(permissionNode)) {
-            return false;
-        }
-
-        return getBoxStickItem().check(player.getInventory().getItemInOffHand())
-                || getBoxStickItem().check(player.getInventory().getItemInMainHand());
     }
 
     public record Trade(@NotNull Player trader, @NotNull MerchantRecipe merchantRecipe) implements StockEvent.Cause {
