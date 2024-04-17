@@ -1,7 +1,6 @@
 plugins {
     java
     id("io.papermc.paperweight.userdev") version "1.6.0"
-    id("io.github.goooler.shadow") version "8.1.7"
 }
 
 group = "net.okocraft.boxtradestick"
@@ -16,10 +15,8 @@ repositories {
 dependencies {
     paperweight.paperDevBundle("1.20.5-R0.1-SNAPSHOT")
 
-    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
-    implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
-
     compileOnly("net.okocraft.box:box-api:6.0.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-SNAPSHOT")
     compileOnly("net.okocraft.box:box-stick-feature:6.0.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
@@ -41,22 +38,13 @@ tasks {
         options.release.set(21)
     }
 
-    build {
-        dependsOn(shadowJar)
-    }
-
     processResources {
-        filesMatching(listOf("plugin.yml", "en.yml", "ja_JP.yml")) {
+        filesMatching(listOf("plugin.yml")) {
             expand("projectVersion" to version)
         }
     }
 
     test {
         useJUnitPlatform()
-    }
-
-    shadowJar {
-        minimize()
-        relocate("com.github.siroshun09", "net.okocraft.boxtradestick.lib")
     }
 }
