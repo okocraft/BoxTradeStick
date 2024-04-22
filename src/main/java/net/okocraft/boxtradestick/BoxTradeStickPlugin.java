@@ -31,6 +31,11 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if (!BoxAPI.isLoaded()) {
+            this.getSLF4JLogger().error("Box is not loaded. All features of BoxTradeStick will not be working.");
+            return;
+        }
+
         BoxAPI.api().getFeatureProvider().getFeature(StickFeature.class)
                 .map(StickFeature::getBoxStickItem)
                 .map(stick -> new PlayerListener(stick, this.localization))
