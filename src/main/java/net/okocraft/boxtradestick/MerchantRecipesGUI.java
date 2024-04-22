@@ -34,12 +34,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
         CUSTOM_INVENTORY_CLASS = Bukkit.createInventory(null, 54, Component.empty()).getClass();
     }
 
-    public static MerchantRecipesGUI fromTopInventory(Inventory topInventory) {
-        if (CUSTOM_INVENTORY_CLASS.isInstance(topInventory) && topInventory.getHolder() instanceof MerchantRecipesGUI gui) {
-            return gui;
-        } else {
-            return null;
-        }
+    public static MerchantRecipesGUI fromInventory(Inventory inventory) {
+        return CUSTOM_INVENTORY_CLASS.isInstance(inventory) && inventory.getHolder() instanceof MerchantRecipesGUI gui ? gui : null;
     }
 
     private final Player trader;
@@ -265,7 +261,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private boolean isSilentlyClosed() {
-        return !closed && this != MerchantRecipesGUI.fromTopInventory(trader.getOpenInventory().getTopInventory());
+        return !closed && this != MerchantRecipesGUI.fromInventory(trader.getOpenInventory().getTopInventory());
     }
 
     private boolean shouldClose() {

@@ -45,6 +45,15 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
                 );
     }
 
+    @Override
+    public void onDisable() {
+        this.getServer().getOnlinePlayers().forEach(player -> {
+            if (MerchantRecipesGUI.fromInventory(player.getOpenInventory().getTopInventory()) != null) {
+                player.closeInventory();
+            }
+        });
+    }
+
     private void loadMessages() throws IOException {
         if (this.localization == null) { // on startup
             this.localization = new MiniMessageLocalization(MiniMessageSource.create(StringMessageMap.create(Languages.defaultMessages())), Languages::getLocaleFrom);

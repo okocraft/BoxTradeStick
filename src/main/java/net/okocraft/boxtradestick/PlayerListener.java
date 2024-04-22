@@ -121,7 +121,7 @@ public class PlayerListener implements Listener {
         if (event.getClickedInventory() == null) {
             return;
         }
-        MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
+        MerchantRecipesGUI gui = MerchantRecipesGUI.fromInventory(event.getView().getTopInventory());
         if (gui != null) {
             event.setCancelled(true);
             gui.onClick(event.getSlot());
@@ -130,7 +130,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClose(InventoryCloseEvent event) {
-        MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(event.getView().getTopInventory());
+        MerchantRecipesGUI gui = MerchantRecipesGUI.fromInventory(event.getView().getTopInventory());
 
         if (gui != null) {
             gui.onClose();
@@ -159,7 +159,7 @@ public class PlayerListener implements Listener {
         }
 
         Inventory inv = trader.getOpenInventory().getTopInventory();
-        MerchantRecipesGUI gui = MerchantRecipesGUI.fromTopInventory(inv);
+        MerchantRecipesGUI gui = MerchantRecipesGUI.fromInventory(inv);
 
         if (gui != null && villager.equals(gui.getVillager())) {
             return;
