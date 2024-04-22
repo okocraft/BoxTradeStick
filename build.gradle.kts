@@ -39,8 +39,8 @@ tasks {
     }
 
     processResources {
-        filesMatching(listOf("plugin.yml")) {
-            expand("projectVersion" to version)
+        filesMatching(listOf("paper-plugin.yml")) {
+            expand("projectVersion" to version, "apiVersion" to mcVersion)
         }
     }
 
