@@ -10,7 +10,7 @@ version = "1.6-SNAPSHOT"
 repositories {
     mavenCentral()
     maven(url = "https://repo.papermc.io/repository/maven-public/")
-    maven(url = "https://okocraft.github.io/Box/maven/")
+    maven(url = "https://okocraft.github.io/Box/maven-snapshot/")
 }
 
 dependencies {
@@ -19,9 +19,8 @@ dependencies {
     implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
 
-    compileOnly("net.okocraft.box:box-api:5.5.2")
-    compileOnly("net.okocraft.box:box-storage-api:5.5.2")
-    compileOnly("net.okocraft.box:box-stick-feature:5.5.2")
+    compileOnly("net.okocraft.box:box-api:6.0.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
     testRuntimeOnly("io.papermc.paper:paper-api:1.20.5-R0.1-SNAPSHOT")
