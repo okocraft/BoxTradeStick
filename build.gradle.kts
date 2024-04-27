@@ -6,6 +6,9 @@ plugins {
 group = "net.okocraft.boxtradestick"
 version = "1.6-SNAPSHOT"
 
+val mcVersion = "1.20.5"
+val fullVersion = "${version}-mc${mcVersion}"
+
 repositories {
     mavenCentral()
     maven(url = "https://repo.papermc.io/repository/maven-public/")
@@ -13,14 +16,14 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.20.5-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("$mcVersion-R0.1-SNAPSHOT")
 
     compileOnly("net.okocraft.box:box-api:6.0.0-SNAPSHOT")
     compileOnly("net.okocraft.box:box-gui-feature:6.0.0-SNAPSHOT")
     compileOnly("net.okocraft.box:box-stick-feature:6.0.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
-    testRuntimeOnly("io.papermc.paper:paper-api:1.20.5-R0.1-SNAPSHOT")
+    testRuntimeOnly("io.papermc.paper:paper-api:$mcVersion-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -46,5 +49,9 @@ tasks {
 
     test {
         useJUnitPlatform()
+    }
+
+    jar {
+        archiveFileName = "BoxTradeStick-$fullVersion.jar"
     }
 }
