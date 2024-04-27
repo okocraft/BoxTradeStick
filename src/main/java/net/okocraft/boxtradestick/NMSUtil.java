@@ -116,6 +116,7 @@ public class NMSUtil {
         }
     }
 
+    // net.minecraft.world.entity.npc.Villager#updateSpecialPrices
     private static void updateSpecialPrices(CraftPlayer player, CraftVillager villager) {
         var playerHandle = player.getHandle();
         var villagerHandle = villager.getHandle();
