@@ -34,6 +34,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
+
 tasks {
     compileJava {
         options.encoding = Charsets.UTF_8.name()
@@ -41,7 +43,7 @@ tasks {
     }
 
     build {
-        dependsOn(reobfJar)
+        dependsOn(shadowJar)
     }
 
     processResources {
