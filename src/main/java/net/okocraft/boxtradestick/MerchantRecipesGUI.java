@@ -1,12 +1,15 @@
 package net.okocraft.boxtradestick;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
+import com.github.siroshun09.messages.minimessage.base.MiniMessageBase;
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.okocraft.box.api.BoxAPI;
+import net.okocraft.box.feature.gui.api.util.ItemEditor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -16,6 +19,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -23,21 +27,20 @@ import org.jetbrains.annotations.Nullable;
 
 public class MerchantRecipesGUI implements InventoryHolder {
 
+    private static final ItemStack NON_BUTTON = ItemEditor.create().displayName(Component.empty().color(NamedTextColor.BLACK)).createItem(Material.GRAY_STAINED_GLASS_PANE);
     private static final Class<?> CUSTOM_INVENTORY_CLASS;
 
     static {
         CUSTOM_INVENTORY_CLASS = Bukkit.createInventory(null, 54, Component.empty()).getClass();
     }
 
-    public static MerchantRecipesGUI fromTopInventory(Inventory topInventory) {
-        if (CUSTOM_INVENTORY_CLASS.isInstance(topInventory) && topInventory.getHolder() instanceof MerchantRecipesGUI gui) {
-            return gui;
-        } else {
-            return null;
-        }
+    public static MerchantRecipesGUI fromInventory(Inventory inventory) {
+        return CUSTOM_INVENTORY_CLASS.isInstance(inventory) && inventory.getHolder() instanceof MerchantRecipesGUI gui ? gui : null;
     }
 
     private final Player trader;
+    private final MiniMessageSource messageSource;
+    private final CachedItems cachedItems;
     private final UUID worldUid;
     private final UUID villagerUuid;
 
@@ -45,11 +48,13 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
     private boolean closed;
 
-    public MerchantRecipesGUI(@NotNull Player trader, @NotNull AbstractVillager villager) {
+    public MerchantRecipesGUI(@NotNull Player trader, @NotNull MiniMessageSource messageSource, @NotNull AbstractVillager villager) {
         this.trader = trader;
+        this.messageSource = messageSource;
+        this.cachedItems = new CachedItems(messageSource);
         this.worldUid = villager.getWorld().getUID();
         this.villagerUuid = villager.getUniqueId();
-        this.inventory = Bukkit.createInventory(this, 54, Translatables.GUI_TITLE.apply(villager));
+        this.inventory = Bukkit.createInventory(this, 54, Languages.GUI_TITLE.apply(villager, villager).create(messageSource));
 
         initialize(villager);
     }
@@ -60,14 +65,14 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private void initialize(@NotNull AbstractVillager villager) {
-        ItemStack[] filled = inventory.getContents();
-        Arrays.fill(filled, createNonButton());
-        getInventory().setContents(filled);
+        ItemStack[] filled = this.inventory.getContents();
+        Arrays.fill(filled, NON_BUTTON);
+        this.inventory.setContents(filled);
 
-        inventory.setItem(17, createArrow(Translatables.GUI_SCROLL_UP_ARROW));
-        inventory.setItem(44, createArrow(Translatables.GUI_SCROLL_DOWN_ARROW));
+        this.inventory.setItem(17, this.createArrow(Languages.SCROLL_UP));
+        this.inventory.setItem(44, this.createArrow(Languages.SCROLL_DOWN));
 
-        update(villager, TradeStickData.loadFrom(villager));
+        this.update(villager, TradeStickData.loadFrom(villager));
     }
 
     public void scheduleWatchingTask() {
@@ -90,16 +95,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
         );
     }
 
-    private ItemStack createNonButton() {
-        return ItemUtil.create(
-                trader.locale(),
-                Material.GRAY_STAINED_GLASS_PANE,
-                Component.empty().color(NamedTextColor.BLACK)
-        );
-    }
-
-    private ItemStack createArrow(Component name) {
-        return ItemUtil.create(trader.locale(), Material.ARROW, name);
+    private ItemStack createArrow(MiniMessageBase displayName) {
+        return ItemEditor.create().displayName(displayName.create(this.messageSource)).createItem(Material.ARROW);
     }
 
     private void update(@NotNull AbstractVillager villager, @NotNull TradeStickData data) {
@@ -115,62 +112,53 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private void updateTradeItem(@NotNull AbstractVillager villager, int row, int recipeIndex, boolean selected) {
-        if (selected) {
-            inventory.setItem(row * 9, ItemUtil.create(
-                    trader.locale(),
-                    Material.LIME_WOOL,
-                    Translatables.GUI_RECIPE_SELECTED,
-                    Translatables.GUI_RECIPE_SELECTED_LORE
-            ));
-        } else {
-            inventory.setItem(row * 9, ItemUtil.create(
-                    trader.locale(),
-                    Material.RED_STAINED_GLASS,
-                    Translatables.GUI_RECIPE_NOT_SELECTED,
-                    Translatables.GUI_RECIPE_SELECTED_LORE
-            ));
-        }
+        this.inventory.setItem(row * 9, selected ? this.cachedItems.recipeSelected : this.cachedItems.recipeNotSelected);
 
         MerchantRecipe recipe = villager.getRecipe(recipeIndex);
-        List<ItemStack> ingredients = new ArrayList<>(recipe.getIngredients());
-        for (int i = 0; i < ingredients.size(); i++) {
-            ItemStack originalIngredient = ingredients.get(i);
-            ItemStack ingredient = originalIngredient.clone();
+
+        List<ItemStack> ingredients = recipe.getIngredients();
+        for (int i = 0, size = ingredients.size(); i < size; i++) {
+            var editor = ItemEditor.create();
+            var ingredient = ingredients.get(i).clone();
+            editor.copyLoreFrom(ingredient);
 
             if (i == 0) {
                 int originalPrice = ingredient.getAmount();
-                recipe.adjust(ingredient);
-                ingredients.set(i, ingredient.clone());
-                int currentPrice = ingredient.getAmount();
-                if (originalPrice != currentPrice) {
-                    ItemUtil.lore(trader.locale(), ingredient,
-                            List.of(Translatables.GUI_PRICE_DIFF.apply(originalPrice, currentPrice)));
+                var adjusted = recipe.getAdjustedIngredient1();
+
+                if (adjusted != null && originalPrice != adjusted.getAmount()) {
+                    editor.loreLine(Languages.GUI_PRICE_DIFF.apply(ingredient.getAmount(), adjusted.getAmount()).create(this.messageSource));
+                    ingredient.setAmount(adjusted.getAmount());
                 }
             }
 
-            ItemUtil.addLoreOfStock(trader, originalIngredient, ingredient, false);
-            inventory.setItem(row * 9 + 2 + i, ingredient);
+            int currentStock = this.getCurrentStock(ingredient, false);
+            if (currentStock != -1) {
+                editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(currentStock).create(this.messageSource));
+            }
+
+            this.inventory.setItem(row * 9 + 2 + i, editor.applyTo(ingredient));
         }
 
-        ItemStack result;
+        if (ingredients.size() == 1) {
+            this.inventory.setItem(row * 9 + 3, NON_BUTTON);
+        }
+
+        ItemStack resultIcon;
+        ItemEditor<ItemMeta> editor;
+
         int leftUses = recipe.getMaxUses() - recipe.getUses();
         if (0 < leftUses) {
-            result = recipe.getResult().clone();
-            ItemUtil.addLoreOfStock(trader, recipe.getResult(), result, true);
-            inventory.setItem(row * 9 + 5, result.clone());
-            ItemUtil.displayName(trader.locale(), result, Translatables.GUI_RESULT_BULK_TRADE.apply(result));
-            result.setAmount(Math.max(1, Math.min(leftUses, BoxUtil.calcConsumedAmount(trader, ingredients))));
+            resultIcon = recipe.getResult().asQuantity(Math.max(1, Math.min(leftUses, this.calcConsumedAmount(ingredients))));
+            editor = ItemEditor.create().displayName(Languages.GUI_RESULT_BULK_TRADE.apply(resultIcon).create(this.messageSource)).copyLoreFrom(resultIcon);
         } else {
-            result = Objects.requireNonNull(ItemUtil.create(
-                    trader.locale(),
-                    Material.BARRIER,
-                    Translatables.GUI_RESULT_NAME_OUT_OF_STOCK.apply(recipe.getResult()))
-            );
-            ItemUtil.addLoreOfStock(trader, recipe.getResult(), result, true);
-            inventory.setItem(row * 9 + 5, result.clone());
+            resultIcon = new ItemStack(Material.BARRIER);
+            editor = ItemEditor.create().displayName(Languages.GUI_RESULT_NAME_AND_OUT_OF_STOCK.apply(recipe.getResult()).create(this.messageSource));
         }
 
-        inventory.setItem(row * 9 + 6, result);
+        editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(this.getCurrentStock(recipe.getResult(), true)).create(this.messageSource)).applyTo(resultIcon);
+        this.inventory.setItem(row * 9 + 5, resultIcon.getAmount() == 1 ? resultIcon : resultIcon.asOne());
+        this.inventory.setItem(row * 9 + 6, resultIcon);
     }
 
     public void onClick(int slot) {
@@ -273,7 +261,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private boolean isSilentlyClosed() {
-        return !closed && this != MerchantRecipesGUI.fromTopInventory(trader.getOpenInventory().getTopInventory());
+        return !closed && this != MerchantRecipesGUI.fromInventory(trader.getOpenInventory().getTopInventory());
     }
 
     private boolean shouldClose() {
@@ -283,10 +271,10 @@ public class MerchantRecipesGUI implements InventoryHolder {
     @Contract("null -> true")
     private boolean shouldClose(@Nullable AbstractVillager villager) {
         return villager == null ||
-                villager.isDead() ||
-                !villager.getWorld().equals(trader.getWorld()) ||
-                100 < villager.getLocation().distanceSquared(trader.getLocation()) ||
-                !trader.equals(villager.getTrader());
+               villager.isDead() ||
+               !villager.getWorld().equals(trader.getWorld()) ||
+               100 < villager.getLocation().distanceSquared(trader.getLocation()) ||
+               !trader.equals(villager.getTrader());
     }
 
     private void tryStopTrading() {
@@ -300,6 +288,58 @@ public class MerchantRecipesGUI implements InventoryHolder {
     private void tryStopTrading(@NotNull AbstractVillager villager) {
         if (trader.equals(villager.getTrader())) {
             NMSUtil.stopTrading(villager);
+        }
+    }
+
+    private int calcConsumedAmount(List<ItemStack> ingredients) {
+        if (!BoxAPI.api().getBoxPlayerMap().isLoaded(this.trader)) {
+            return 0;
+        }
+
+        var stockHolder = BoxAPI.api().getBoxPlayerMap().get(this.trader).getCurrentStockHolder();
+        int consumingAmount = Integer.MAX_VALUE;
+
+        for (var ingredient : ingredients) {
+            if (ingredient.getType().isAir()) {
+                continue;
+            }
+
+            var boxItem = BoxAPI.api().getItemManager().getBoxItem(ingredient);
+
+            if (boxItem.isEmpty()) {
+                return 0;
+            } else {
+                consumingAmount = Math.min(consumingAmount, stockHolder.getAmount(boxItem.get()) / ingredient.getAmount());
+            }
+        }
+
+        return consumingAmount;
+    }
+
+    private int getCurrentStock(@NotNull ItemStack item, boolean useInventoryIfNotBoxItem) {
+        var boxItem = BoxAPI.api().getItemManager().getBoxItem(item);
+        var playerMap = BoxAPI.api().getBoxPlayerMap();
+
+        if (boxItem.isPresent() && playerMap.isLoaded(this.trader)) {
+            return playerMap.get(this.trader).getCurrentStockHolder().getAmount(boxItem.get());
+        } else if (useInventoryIfNotBoxItem) {
+            return StreamSupport.stream(this.trader.getInventory().spliterator(), false)
+                    .filter(item::isSimilar)
+                    .mapToInt(ItemStack::getAmount)
+                    .reduce(Integer::sum).orElse(0);
+        } else {
+            return -1;
+        }
+    }
+
+    private static class CachedItems {
+        private final ItemStack recipeSelected;
+        private final ItemStack recipeNotSelected;
+
+        private CachedItems(@NotNull MiniMessageSource messageSource) {
+            var selectedLore = Languages.RECIPE_LORE.create(messageSource);
+            this.recipeSelected = ItemEditor.create().displayName(Languages.RECIPE_SELECTED.create(messageSource)).loreLines(selectedLore).createItem(Material.LIME_WOOL);
+            this.recipeNotSelected = ItemEditor.create().displayName(Languages.RECIPE_NOT_SELECTED.create(messageSource)).loreLines(selectedLore).createItem(Material.RED_STAINED_GLASS);
         }
     }
 }

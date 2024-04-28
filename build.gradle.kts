@@ -1,11 +1,13 @@
 plugins {
     java
     id("io.papermc.paperweight.userdev") version "1.6.0"
-    id("io.github.goooler.shadow") version "8.1.7"
 }
 
 group = "net.okocraft.boxtradestick"
 version = "1.6-SNAPSHOT"
+
+val mcVersion = "1.20.5"
+val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
     mavenCentral()
@@ -14,16 +16,14 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.20.5-R0.1-SNAPSHOT")
-
-    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
-    implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
+    paperweight.paperDevBundle("$mcVersion-R0.1-SNAPSHOT")
 
     compileOnly("net.okocraft.box:box-api:6.0.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-SNAPSHOT")
     compileOnly("net.okocraft.box:box-stick-feature:6.0.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
-    testRuntimeOnly("io.papermc.paper:paper-api:1.20.5-R0.1-SNAPSHOT")
+    testRuntimeOnly("io.papermc.paper:paper-api:$mcVersion-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -41,13 +41,9 @@ tasks {
         options.release.set(21)
     }
 
-    build {
-        dependsOn(shadowJar)
-    }
-
     processResources {
-        filesMatching(listOf("plugin.yml", "en.yml", "ja_JP.yml")) {
-            expand("projectVersion" to version)
+        filesMatching(listOf("paper-plugin.yml")) {
+            expand("projectVersion" to version, "apiVersion" to mcVersion)
         }
     }
 
@@ -55,8 +51,7 @@ tasks {
         useJUnitPlatform()
     }
 
-    shadowJar {
-        minimize()
-        relocate("com.github.siroshun09", "net.okocraft.boxtradestick.lib")
+    jar {
+        archiveFileName = "BoxTradeStick-$fullVersion.jar"
     }
 }
