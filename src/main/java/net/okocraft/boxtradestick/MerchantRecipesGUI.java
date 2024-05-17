@@ -1,9 +1,5 @@
 package net.okocraft.boxtradestick;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.StreamSupport;
 import com.github.siroshun09.messages.minimessage.base.MiniMessageBase;
 import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
@@ -24,6 +20,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 public class MerchantRecipesGUI implements InventoryHolder {
 
@@ -117,31 +118,20 @@ public class MerchantRecipesGUI implements InventoryHolder {
         MerchantRecipe recipe = villager.getRecipe(recipeIndex);
 
         List<ItemStack> ingredients = recipe.getIngredients();
-        for (int i = 0, size = ingredients.size(); i < size; i++) {
-            var editor = ItemEditor.create();
-            var ingredient = ingredients.get(i).clone();
-            editor.copyLoreFrom(ingredient);
+        int size = ingredients.size();
 
-            if (i == 0) {
-                int originalPrice = ingredient.getAmount();
-                var adjusted = recipe.getAdjustedIngredient1();
+        if (size == 1 || size == 2) {
+            var firstIngredient = ingredients.getFirst();
+            this.inventory.setItem(row * 9 + 2, this.createIngredientIcon(firstIngredient, recipe, true).applyTo(firstIngredient.clone()));
 
-                if (adjusted != null && originalPrice != adjusted.getAmount()) {
-                    editor.loreLine(Languages.GUI_PRICE_DIFF.apply(ingredient.getAmount(), adjusted.getAmount()).create(this.messageSource));
-                    ingredient.setAmount(adjusted.getAmount());
-                }
+            if (size == 2) {
+                var secondIngredient = ingredients.getFirst();
+                this.inventory.setItem(row * 9 + 3, this.createIngredientIcon(secondIngredient, recipe, false).applyTo(secondIngredient.clone()));
+            } else {
+                this.inventory.setItem(row * 9 + 3, null);
             }
-
-            int currentStock = this.getCurrentStock(ingredient, false);
-            if (currentStock != -1) {
-                editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(currentStock).create(this.messageSource));
-            }
-
-            this.inventory.setItem(row * 9 + 2 + i, editor.applyTo(ingredient));
-        }
-
-        if (ingredients.size() == 1) {
-            this.inventory.setItem(row * 9 + 3, NON_BUTTON);
+        } else {
+            return;
         }
 
         ItemStack resultIcon;
@@ -159,6 +149,28 @@ public class MerchantRecipesGUI implements InventoryHolder {
         editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(this.getCurrentStock(recipe.getResult(), true)).create(this.messageSource)).applyTo(resultIcon);
         this.inventory.setItem(row * 9 + 5, resultIcon.getAmount() == 1 ? resultIcon : resultIcon.asOne());
         this.inventory.setItem(row * 9 + 6, resultIcon);
+    }
+
+    private @NotNull ItemEditor<ItemMeta> createIngredientIcon(ItemStack ingredient, MerchantRecipe recipe, boolean adjustPrice) {
+        var editor = ItemEditor.create();
+        editor.copyLoreFrom(ingredient);
+
+        if (adjustPrice) {
+            int originalPrice = ingredient.getAmount();
+            var adjusted = recipe.getAdjustedIngredient1();
+
+            if (adjusted != null && originalPrice != adjusted.getAmount()) {
+                editor.loreLine(Languages.GUI_PRICE_DIFF.apply(ingredient.getAmount(), adjusted.getAmount()).create(this.messageSource));
+                ingredient.setAmount(adjusted.getAmount());
+            }
+        }
+
+        int currentStock = this.getCurrentStock(ingredient, false);
+        if (currentStock != -1) {
+            editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(currentStock).create(this.messageSource));
+        }
+
+        return editor;
     }
 
     public void onClick(int slot) {
