@@ -1,5 +1,8 @@
 package net.okocraft.boxtradestick;
 
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Map;
 import com.github.siroshun09.messages.api.directory.DirectorySource;
 import com.github.siroshun09.messages.api.directory.MessageProcessors;
 import com.github.siroshun09.messages.api.source.StringMessageMap;
@@ -11,10 +14,6 @@ import net.okocraft.box.feature.stick.StickFeature;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.IOException;
-import java.util.Locale;
-import java.util.Map;
 
 public final class BoxTradeStickPlugin extends JavaPlugin {
 

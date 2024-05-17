@@ -1,5 +1,9 @@
 package net.okocraft.boxtradestick;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.StreamSupport;
 import com.github.siroshun09.messages.minimessage.base.MiniMessageBase;
 import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
@@ -20,11 +24,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.StreamSupport;
 
 public class MerchantRecipesGUI implements InventoryHolder {
 
