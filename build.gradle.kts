@@ -12,15 +12,15 @@ val fullVersion = "${version}-mc${mcVersion}"
 repositories {
     mavenCentral()
     maven(url = "https://repo.papermc.io/repository/maven-public/")
-    maven(url = "https://okocraft.github.io/Box/maven-snapshot/")
+    maven(url = "https://okocraft.github.io/Box/maven/")
 }
 
 dependencies {
     paperweight.paperDevBundle("$mcVersion-R0.1-SNAPSHOT")
 
-    compileOnly("net.okocraft.box:box-api:6.0.0-SNAPSHOT")
-    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-SNAPSHOT")
-    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-SNAPSHOT")
+    compileOnly("net.okocraft.box:box-api:6.0.0-rc.1")
+    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.1")
+    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
     testRuntimeOnly("io.papermc.paper:paper-api:$mcVersion-R0.1-SNAPSHOT")
