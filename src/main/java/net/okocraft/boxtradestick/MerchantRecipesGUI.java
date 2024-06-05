@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
+
 import com.github.siroshun09.messages.minimessage.base.MiniMessageBase;
 import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
@@ -77,21 +78,21 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
     public void scheduleWatchingTask() {
         trader.getScheduler().runAtFixedRate(
-                JavaPlugin.getPlugin(BoxTradeStickPlugin.class),
-                task -> {
-                    if (!closed) {
-                        if (isSilentlyClosed()) {
-                            onClose();
-                        } else if (shouldClose()) {
-                            trader.closeInventory();
-                        }
+            JavaPlugin.getPlugin(BoxTradeStickPlugin.class),
+            task -> {
+                if (!closed) {
+                    if (isSilentlyClosed()) {
+                        onClose();
+                    } else if (shouldClose()) {
+                        trader.closeInventory();
                     }
+                }
 
-                    if (closed) {
-                        task.cancel();
-                    }
-                },
-                this::onClose, 1, 1
+                if (closed) {
+                    task.cancel();
+                }
+            },
+            this::onClose, 1, 1
         );
     }
 
@@ -335,9 +336,9 @@ public class MerchantRecipesGUI implements InventoryHolder {
             return playerMap.get(this.trader).getCurrentStockHolder().getAmount(boxItem.get());
         } else if (useInventoryIfNotBoxItem) {
             return StreamSupport.stream(this.trader.getInventory().spliterator(), false)
-                    .filter(item::isSimilar)
-                    .mapToInt(ItemStack::getAmount)
-                    .reduce(Integer::sum).orElse(0);
+                .filter(item::isSimilar)
+                .mapToInt(ItemStack::getAmount)
+                .reduce(Integer::sum).orElse(0);
         } else {
             return -1;
         }

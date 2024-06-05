@@ -30,19 +30,19 @@ public final class Languages {
 
     private static final Map<String, String> DEFAULT_MESSAGES = new LinkedHashMap<>();
     private static final Placeholder<AbstractVillager> PROFESSION = Placeholder.component(
-            "profession",
-            abstractVillager -> switch (abstractVillager) {
-                case Villager villager -> Component.translatable(villager.getProfession());
-                case WanderingTrader trader -> Component.translatable(trader.getType());
-                default -> Component.text("Custom");
-            }
+        "profession",
+        abstractVillager -> switch (abstractVillager) {
+            case Villager villager -> Component.translatable(villager.getProfession());
+            case WanderingTrader trader -> Component.translatable(trader.getType());
+            default -> Component.text("Custom");
+        }
     );
     private static final Placeholder<AbstractVillager> VILLAGER_NAME = Placeholder.component(
-            "name",
-            abstractVillager -> {
-                var customName = abstractVillager.customName();
-                return customName != null ? customName : Component.text(abstractVillager.getUniqueId().toString().substring(0, 9) + "...");
-            }
+        "name",
+        abstractVillager -> {
+            var customName = abstractVillager.customName();
+            return customName != null ? customName : Component.text(abstractVillager.getUniqueId().toString().substring(0, 9) + "...");
+        }
     );
     private static final Placeholder<ItemStack> ITEM_NAME = Placeholder.component("item", item -> {
         var customName = item.hasItemMeta() ? item.getItemMeta().displayName() : null;

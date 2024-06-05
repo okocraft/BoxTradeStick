@@ -39,8 +39,8 @@ public class NMSUtil {
         if (merchant instanceof AbstractVillager abstractVillager) {
             return abstractVillager;
         } else if (merchant instanceof CraftMerchant craftMerchant &&
-                craftMerchant.getMerchant() instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager &&
-                abstractVillager.getBukkitEntity() instanceof AbstractVillager bukkitEntity) {
+                   craftMerchant.getMerchant() instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager &&
+                   abstractVillager.getBukkitEntity() instanceof AbstractVillager bukkitEntity) {
             return bukkitEntity;
         } else {
             return null;

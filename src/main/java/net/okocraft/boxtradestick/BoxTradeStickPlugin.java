@@ -36,12 +36,12 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
         }
 
         BoxAPI.api().getFeatureProvider().getFeature(StickFeature.class)
-                .map(StickFeature::getBoxStickItem)
-                .map(stick -> new PlayerListener(stick, this.localization))
-                .ifPresentOrElse(
-                        listener -> this.getServer().getPluginManager().registerEvents(listener, this),
-                        () -> this.getSLF4JLogger().error("Failed to get the Box Stick from Box.")
-                );
+            .map(StickFeature::getBoxStickItem)
+            .map(stick -> new PlayerListener(stick, this.localization))
+            .ifPresentOrElse(
+                listener -> this.getServer().getPluginManager().registerEvents(listener, this),
+                () -> this.getSLF4JLogger().error("Failed to get the Box Stick from Box.")
+            );
     }
 
     @Override
@@ -61,9 +61,9 @@ public final class BoxTradeStickPlugin extends JavaPlugin {
         }
 
         DirectorySource.propertiesFiles(this.getDataFolder().toPath().resolve("languages"))
-                .defaultLocale(Locale.ENGLISH, Locale.JAPANESE)
-                .messageProcessor(MessageProcessors.appendMissingMessagesToPropertiesFile(this::loadDefaultMessageMap))
-                .load(loaded -> this.localization.addSource(loaded.locale(), MiniMessageSource.create(loaded.messageSource())));
+            .defaultLocale(Locale.ENGLISH, Locale.JAPANESE)
+            .messageProcessor(MessageProcessors.appendMissingMessagesToPropertiesFile(this::loadDefaultMessageMap))
+            .load(loaded -> this.localization.addSource(loaded.locale(), MiniMessageSource.create(loaded.messageSource())));
     }
 
     private @Nullable Map<String, String> loadDefaultMessageMap(@NotNull Locale locale) throws IOException {
