@@ -1,0 +1,12 @@
+name: BoxTradeStick
+version: '${projectVersion}'
+main: net.okocraft.boxtradestick.BoxTradeStickPlugin
+api-version: "${apiVersion}"
+folia-supported: true
+
+dependencies:
+  server:
+    Box:
+      load: BEFORE
+      required: true
+      join-classpath: true

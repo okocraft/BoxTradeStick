@@ -7,12 +7,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.trading.MerchantOffer;
 import org.bukkit.Statistic;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftAbstractVillager;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftVillager;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftWanderingTrader;
-import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchant;
-import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchantRecipe;
+import org.bukkit.craftbukkit.entity.CraftAbstractVillager;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftVillager;
+import org.bukkit.craftbukkit.entity.CraftWanderingTrader;
+import org.bukkit.craftbukkit.inventory.CraftMerchant;
+import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -116,6 +116,7 @@ public class NMSUtil {
         }
     }
 
+    // net.minecraft.world.entity.npc.Villager#updateSpecialPrices
     private static void updateSpecialPrices(CraftPlayer player, CraftVillager villager) {
         var playerHandle = player.getHandle();
         var villagerHandle = villager.getHandle();

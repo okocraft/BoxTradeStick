@@ -1,11 +1,13 @@
 plugins {
     java
-    id("io.papermc.paperweight.userdev") version "1.5.15"
-    id("io.github.goooler.shadow") version "8.1.7"
+    id("io.papermc.paperweight.userdev") version "1.7.1"
 }
 
 group = "net.okocraft.boxtradestick"
-version = "1.5"
+version = "1.6-SNAPSHOT"
+
+val mcVersion = "1.20.6"
+val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
     mavenCentral()
@@ -14,39 +16,34 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.20.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("$mcVersion-R0.1-SNAPSHOT")
 
-    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
-    implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
-
-    compileOnly("net.okocraft.box:box-api:5.5.2")
-    compileOnly("net.okocraft.box:box-storage-api:5.5.2")
-    compileOnly("net.okocraft.box:box-stick-feature:5.5.2")
+    compileOnly("net.okocraft.box:box-api:6.0.0-rc.1")
+    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.1")
+    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
-    testRuntimeOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
+    testRuntimeOnly("io.papermc.paper:paper-api:$mcVersion-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
+
+paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
 tasks {
     compileJava {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(17)
-    }
-
-    build {
-        dependsOn(reobfJar)
+        options.release.set(21)
     }
 
     processResources {
-        filesMatching(listOf("plugin.yml", "en.yml", "ja_JP.yml")) {
-            expand("projectVersion" to version)
+        filesMatching(listOf("paper-plugin.yml")) {
+            expand("projectVersion" to version, "apiVersion" to mcVersion)
         }
     }
 
@@ -54,8 +51,7 @@ tasks {
         useJUnitPlatform()
     }
 
-    shadowJar {
-        minimize()
-        relocate("com.github.siroshun09", "net.okocraft.boxtradestick.lib")
+    jar {
+        archiveFileName = "BoxTradeStick-$fullVersion.jar"
     }
 }
