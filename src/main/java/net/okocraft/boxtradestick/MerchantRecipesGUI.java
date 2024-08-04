@@ -125,7 +125,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
             this.inventory.setItem(row * 9 + 2, this.createIngredientIcon(firstIngredient, recipe, true).applyTo(firstIngredient.clone()));
 
             if (size == 2) {
-                var secondIngredient = ingredients.getFirst();
+                var secondIngredient = ingredients.get(1);
                 this.inventory.setItem(row * 9 + 3, this.createIngredientIcon(secondIngredient, recipe, false).applyTo(secondIngredient.clone()));
             } else {
                 this.inventory.setItem(row * 9 + 3, null);
