@@ -1,7 +1,6 @@
 package net.okocraft.boxtradestick;
 
 import io.papermc.paper.event.player.PlayerPurchaseEvent;
-import java.util.Objects;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -103,9 +102,16 @@ public class NMSUtil {
         return wanderingTrader.getRecipeCount() != 0;
     }
 
+    // See: net.minecraft.world.entity.npc.Villager#stopTrading
     public static void stopTrading(AbstractVillager villager) {
-        if (villager instanceof CraftAbstractVillager craftVillager) {
-            craftVillager.getHandle().setTradingPlayer(null);
+        if (villager instanceof CraftAbstractVillager craftAbstractVillager) {
+            craftAbstractVillager.getHandle().setTradingPlayer(null);
+
+            if (villager instanceof CraftVillager craftVillager) {
+                for (var merchantOffer : craftVillager.getHandle().getOffers()) {
+                    merchantOffer.resetSpecialPriceDiff();
+                }
+            }
         }
     }
 
@@ -121,26 +127,30 @@ public class NMSUtil {
         var playerHandle = player.getHandle();
         var villagerHandle = villager.getHandle();
 
-        int i = villagerHandle.getPlayerReputation(playerHandle);
+        int playerReputation = villagerHandle.getPlayerReputation(playerHandle);
 
-        if (i != 0) {
+        if (playerReputation != 0) {
             for (MerchantOffer merchantrecipe : villagerHandle.getOffers()) {
                 if (!merchantrecipe.ignoreDiscounts) {
-                    merchantrecipe.addToSpecialPriceDiff(-Mth.floor((float) i * merchantrecipe.getPriceMultiplier()));
+                    merchantrecipe.addToSpecialPriceDiff(-Mth.floor((float) playerReputation * merchantrecipe.getPriceMultiplier()));
                 }
             }
         }
 
-        if (playerHandle.hasEffect(MobEffects.HERO_OF_THE_VILLAGE)) {
-            MobEffectInstance mobeffect = playerHandle.getEffect(MobEffects.HERO_OF_THE_VILLAGE);
-            int j = Objects.requireNonNull(mobeffect).getAmplifier();
-            for (MerchantOffer merchantrecipe1 : villagerHandle.getOffers()) {
-                if (merchantrecipe1.ignoreDiscounts) continue; // Paper
-                double d0 = 0.3D + 0.0625D * (double) j;
-                int k = (int) Math.floor(d0 * (double) merchantrecipe1.getBaseCostA().getCount());
+        MobEffectInstance mobeffect = playerHandle.getEffect(MobEffects.HERO_OF_THE_VILLAGE);
 
-                merchantrecipe1.addToSpecialPriceDiff(-Math.max(k, 1));
-            }
+        if (mobeffect == null) {
+            return;
+        }
+
+        int amplifier = mobeffect.getAmplifier();
+
+        for (MerchantOffer merchantrecipe1 : villagerHandle.getOffers()) {
+            if (merchantrecipe1.ignoreDiscounts) continue; // Paper
+            double d = 0.3D + 0.0625D * (double) amplifier;
+            int i = (int) Math.floor(d * (double) merchantrecipe1.getBaseCostA().getCount());
+
+            merchantrecipe1.addToSpecialPriceDiff(-Math.max(i, 1));
         }
     }
 
