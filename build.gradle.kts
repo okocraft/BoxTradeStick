@@ -6,7 +6,7 @@ plugins {
 group = "net.okocraft.boxtradestick"
 version = "1.6"
 
-val mcVersion = "1.21.7"
+val mcVersion = "1.21.9-pre2"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
@@ -43,7 +43,7 @@ tasks {
 
     processResources {
         filesMatching(listOf("paper-plugin.yml")) {
-            expand("projectVersion" to version, "apiVersion" to mcVersion)
+            expand("projectVersion" to version, "apiVersion" to "1.21.9")
         }
     }
 
