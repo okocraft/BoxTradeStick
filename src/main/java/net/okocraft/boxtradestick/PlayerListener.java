@@ -30,12 +30,12 @@ public class PlayerListener implements Listener {
     private static final long TRADE_COOLDOWN_TIME = 1000L;
     private static final long TRADE_COOLDOWN_TIME_AFTER_THE_2ND = 500L;
     private static final EnumSet<GameMode> IGNORING_GAME_MODES = EnumSet.of(GameMode.CREATIVE, GameMode.SPECTATOR);
+    private static final ScopedValue<PlayerInteractEntityEvent> FIRED_INTERACT_EVENT = ScopedValue.newInstance();
 
     private final BoxStickItem boxStickItem;
     private final MiniMessageLocalization localization;
 
     private final Map<UUID, Long> tradeCooldownEndTimeMap = new ConcurrentHashMap<>();
-    private final ThreadLocal<PlayerInteractEntityEvent> calledPlayerInteractEntityEvent = new ThreadLocal<>();
 
     public PlayerListener(BoxStickItem boxStickItem, MiniMessageLocalization localization) {
         this.boxStickItem = boxStickItem;
@@ -71,12 +71,11 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        var playerInteractEvent = new PlayerInteractEntityEvent(player, villager);
-        this.calledPlayerInteractEntityEvent.set(playerInteractEvent);
-        if (!playerInteractEvent.callEvent()) {
+        PlayerInteractEntityEvent playerInteractEvent = new PlayerInteractEntityEvent(player, villager);
+        ScopedValue.where(FIRED_INTERACT_EVENT, playerInteractEvent).run(playerInteractEvent::callEvent);
+        if (playerInteractEvent.isCancelled()) {
             return;
         }
-        this.calledPlayerInteractEntityEvent.remove();
 
         checkCurrentTrader(villager);
 
@@ -97,7 +96,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        if (this.calledPlayerInteractEntityEvent.get() == event || !(event.getRightClicked() instanceof AbstractVillager villager)) {
+        if (FIRED_INTERACT_EVENT.isBound() || !(event.getRightClicked() instanceof AbstractVillager villager)) {
             return;
         }
 

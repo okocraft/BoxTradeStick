@@ -6,7 +6,7 @@ plugins {
 group = "net.okocraft.boxtradestick"
 version = "1.6"
 
-val mcVersion = "1.21.7"
+val mcVersion = "1.21.9"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
@@ -29,8 +29,8 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
@@ -38,7 +38,7 @@ paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArt
 tasks {
     compileJava {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(21)
+        options.release.set(25)
     }
 
     processResources {
