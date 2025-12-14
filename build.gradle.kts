@@ -6,7 +6,7 @@ plugins {
 group = "net.okocraft.boxtradestick"
 version = "1.6"
 
-val mcVersion = "1.21.10"
+val mcVersion = "1.21.11"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {

@@ -38,7 +38,7 @@ public class NMSUtil {
         if (merchant instanceof AbstractVillager abstractVillager) {
             return abstractVillager;
         } else if (merchant instanceof CraftMerchant craftMerchant &&
-                   craftMerchant.getMerchant() instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager &&
+                   craftMerchant.getMerchant() instanceof net.minecraft.world.entity.npc.villager.AbstractVillager abstractVillager &&
                    abstractVillager.getBukkitEntity() instanceof AbstractVillager bukkitEntity) {
             return bukkitEntity;
         } else {
@@ -73,7 +73,7 @@ public class NMSUtil {
         }
     }
 
-    // See: net.minecraft.world.entity.npc.Villager#mobInteract
+    // See: net.minecraft.world.entity.npc.villager.Villager#mobInteract
     private static boolean simulateMobInteract(Player player, Villager villager, EquipmentSlot hand) {
         if (!villager.isAdult()) {
             setUnhappy(villager);
@@ -93,7 +93,7 @@ public class NMSUtil {
         }
     }
 
-    // See: net.minecraft.world.entity.npc.WanderingTrader#mobInteract
+    // See: net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader#mobInteract
     private static boolean simulateMobInteract(Player player, WanderingTrader wanderingTrader, EquipmentSlot hand) {
         if (hand == EquipmentSlot.HAND) {
             player.incrementStatistic(Statistic.TALKED_TO_VILLAGER);
@@ -102,7 +102,7 @@ public class NMSUtil {
         return wanderingTrader.getRecipeCount() != 0;
     }
 
-    // See: net.minecraft.world.entity.npc.Villager#stopTrading
+    // See: net.minecraft.world.entity.npc.villager.Villager#stopTrading
     public static void stopTrading(AbstractVillager villager) {
         if (villager instanceof CraftAbstractVillager craftAbstractVillager) {
             craftAbstractVillager.getHandle().setTradingPlayer(null);
@@ -122,7 +122,7 @@ public class NMSUtil {
         }
     }
 
-    // net.minecraft.world.entity.npc.Villager#updateSpecialPrices
+    // net.minecraft.world.entity.npc.villager.Villager#updateSpecialPrices
     private static void updateSpecialPrices(CraftPlayer player, CraftVillager villager) {
         var playerHandle = player.getHandle();
         var villagerHandle = villager.getHandle();
