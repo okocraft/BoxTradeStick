@@ -1,6 +1,5 @@
 package net.okocraft.boxtradestick;
 
-import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import io.papermc.paper.event.player.PlayerPurchaseEvent;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import java.util.ArrayList;
@@ -24,7 +23,7 @@ public final class TradeProcessor {
         return villager.getRecipeCount() < TradeStickData.MAXIMUM_INDEX;
     }
 
-    public static int processSelectedOffersForMaxUses(@NotNull Player trader, @NotNull MiniMessageSource messageSource, @NotNull AbstractVillager villager) {
+    public static int processSelectedOffersForMaxUses(@NotNull Player trader, @NotNull AbstractVillager villager) {
         int[] recipeIndices = TradeStickData.loadFrom(villager).getSelectedIndices(trader.getUniqueId());
 
         if (recipeIndices.length == 0) {
@@ -43,7 +42,7 @@ public final class TradeProcessor {
 
         if (results.isEmpty()) {
             trader.playSound(villager, Sound.ENTITY_VILLAGER_NO, 1, 1);
-            trader.sendActionBar(Languages.RECIPE_OUT_OF_STOCK.create(messageSource));
+            trader.sendActionBar(Languages.RECIPE_OUT_OF_STOCK);
             return 0;
         }
 
@@ -51,9 +50,9 @@ public final class TradeProcessor {
 
         if (results.size() == 1) {
             TradeResult result = results.getFirst();
-            message = Languages.RESULT_TIMES.apply(result.count, result.recipe.getResult(), result.recipe.getResult().getAmount() * result.count).create(messageSource);
+            message = Languages.RESULT_TIMES.apply(result.count, result.recipe.getResult(), result.recipe.getResult().getAmount() * result.count);
         } else {
-            message = Languages.MULTIPLE_RESULT_TIMES.apply(results.stream().mapToInt(TradeResult::count).sum(), results.size()).create(messageSource);
+            message = Languages.MULTIPLE_RESULT_TIMES.apply(results.stream().mapToInt(TradeResult::count).sum(), results.size());
         }
 
         trader.playSound(villager, Sound.ENTITY_VILLAGER_TRADE, 1, 1);

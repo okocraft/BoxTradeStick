@@ -4,7 +4,6 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import com.github.siroshun09.messages.minimessage.localization.MiniMessageLocalization;
 import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.feature.stick.item.BoxStickItem;
 import org.bukkit.Bukkit;
@@ -33,13 +32,11 @@ public class PlayerListener implements Listener {
     private static final ScopedValue<PlayerInteractEntityEvent> FIRED_INTERACT_EVENT = ScopedValue.newInstance();
 
     private final BoxStickItem boxStickItem;
-    private final MiniMessageLocalization localization;
 
     private final Map<UUID, Long> tradeCooldownEndTimeMap = new ConcurrentHashMap<>();
 
-    public PlayerListener(BoxStickItem boxStickItem, MiniMessageLocalization localization) {
+    public PlayerListener(BoxStickItem boxStickItem) {
         this.boxStickItem = boxStickItem;
-        this.localization = localization;
     }
 
     @EventHandler
@@ -63,11 +60,9 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        var messageSource = this.localization.findSource(player);
-
         long cooldownTime = calcCooldownTime(player);
         if (cooldownTime > 0) {
-            player.sendActionBar(Languages.HIT_TRADING_COOLDOWN.apply(cooldownTime).create(messageSource));
+            player.sendActionBar(Languages.HIT_TRADING_COOLDOWN.apply(cooldownTime));
             return;
         }
 
@@ -85,7 +80,7 @@ public class PlayerListener implements Listener {
 
         NMSUtil.startTrading(player, villager);
 
-        int succeededCount = TradeProcessor.processSelectedOffersForMaxUses(player, messageSource, villager);
+        int succeededCount = TradeProcessor.processSelectedOffersForMaxUses(player, villager);
         if (succeededCount > 0) {
             long cooldownEndTime = calcCooldownEndTime(succeededCount);
             tradeCooldownEndTimeMap.put(player.getUniqueId(), cooldownEndTime);
@@ -108,7 +103,7 @@ public class PlayerListener implements Listener {
             if (NMSUtil.simulateMobInteract(player, villager, event.getHand())) {
                 NMSUtil.startTrading(player, villager);
 
-                MerchantRecipesGUI gui = new MerchantRecipesGUI(player, this.localization.findSource(player), villager);
+                MerchantRecipesGUI gui = new MerchantRecipesGUI(player, villager);
                 player.openInventory(gui.getInventory());
                 gui.scheduleWatchingTask();
             }

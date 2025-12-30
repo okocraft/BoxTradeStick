@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 
-import com.github.siroshun09.messages.minimessage.base.MiniMessageBase;
-import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.okocraft.box.api.BoxAPI;
 import net.okocraft.box.feature.gui.api.util.ItemEditor;
@@ -20,7 +20,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -28,10 +27,14 @@ import org.jetbrains.annotations.Nullable;
 
 public class MerchantRecipesGUI implements InventoryHolder {
 
-    private static final ItemStack NON_BUTTON = ItemEditor.create().displayName(Component.empty().color(NamedTextColor.BLACK)).createItem(Material.GRAY_STAINED_GLASS_PANE);
+    private static final ItemStack NON_BUTTON;
     private static final Class<?> CUSTOM_INVENTORY_CLASS;
 
     static {
+        ItemStack nonButton = ItemStack.of(Material.GRAY_STAINED_GLASS_PANE, 1);
+        nonButton.setData(DataComponentTypes.ITEM_NAME, Component.empty().color(NamedTextColor.BLACK));
+        NON_BUTTON = nonButton;
+
         CUSTOM_INVENTORY_CLASS = Bukkit.createInventory(null, 54, Component.empty()).getClass();
     }
 
@@ -40,7 +43,6 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private final Player trader;
-    private final MiniMessageSource messageSource;
     private final CachedItems cachedItems;
     private final UUID worldUid;
     private final UUID villagerUuid;
@@ -49,13 +51,12 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
     private boolean closed;
 
-    public MerchantRecipesGUI(@NotNull Player trader, @NotNull MiniMessageSource messageSource, @NotNull AbstractVillager villager) {
+    public MerchantRecipesGUI(@NotNull Player trader, @NotNull AbstractVillager villager) {
         this.trader = trader;
-        this.messageSource = messageSource;
-        this.cachedItems = new CachedItems(messageSource);
+        this.cachedItems = new CachedItems(trader);
         this.worldUid = villager.getWorld().getUID();
         this.villagerUuid = villager.getUniqueId();
-        this.inventory = Bukkit.createInventory(this, 54, Languages.GUI_TITLE.apply(villager, villager).create(messageSource));
+        this.inventory = Bukkit.createInventory(this, 54, Languages.GUI_TITLE.apply(villager, villager));
 
         initialize(villager);
     }
@@ -96,8 +97,8 @@ public class MerchantRecipesGUI implements InventoryHolder {
         );
     }
 
-    private ItemStack createArrow(MiniMessageBase displayName) {
-        return ItemEditor.create().displayName(displayName.create(this.messageSource)).createItem(Material.ARROW);
+    private ItemStack createArrow(ComponentLike displayName) {
+        return ItemEditor.create().displayName(displayName).createItem(this.trader, Material.ARROW);
     }
 
     private void update(@NotNull AbstractVillager villager, @NotNull TradeStickData data) {
@@ -122,11 +123,11 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
         if (size == 1 || size == 2) {
             var firstIngredient = ingredients.getFirst();
-            this.inventory.setItem(row * 9 + 2, this.createIngredientIcon(firstIngredient, recipe, true).applyTo(firstIngredient.clone()));
+            this.inventory.setItem(row * 9 + 2, this.createIngredientIcon(firstIngredient, recipe, true).applyTo(this.trader, firstIngredient.clone()));
 
             if (size == 2) {
                 var secondIngredient = ingredients.get(1);
-                this.inventory.setItem(row * 9 + 3, this.createIngredientIcon(secondIngredient, recipe, false).applyTo(secondIngredient.clone()));
+                this.inventory.setItem(row * 9 + 3, this.createIngredientIcon(secondIngredient, recipe, false).applyTo(this.trader, secondIngredient.clone()));
             } else {
                 this.inventory.setItem(row * 9 + 3, null);
             }
@@ -135,23 +136,23 @@ public class MerchantRecipesGUI implements InventoryHolder {
         }
 
         ItemStack resultIcon;
-        ItemEditor<ItemMeta> editor;
+        ItemEditor editor;
 
         int leftUses = recipe.getMaxUses() - recipe.getUses();
         if (0 < leftUses) {
             resultIcon = recipe.getResult().asQuantity(Math.max(1, Math.min(leftUses, this.calcConsumedAmount(ingredients))));
-            editor = ItemEditor.create().displayName(Languages.GUI_RESULT_BULK_TRADE.apply(resultIcon).create(this.messageSource)).copyLoreFrom(resultIcon);
+            editor = ItemEditor.create().displayName(Languages.GUI_RESULT_BULK_TRADE.apply(resultIcon)).copyLoreFrom(resultIcon);
         } else {
             resultIcon = new ItemStack(Material.BARRIER);
-            editor = ItemEditor.create().displayName(Languages.GUI_RESULT_NAME_AND_OUT_OF_STOCK.apply(recipe.getResult()).create(this.messageSource));
+            editor = ItemEditor.create().displayName(Languages.GUI_RESULT_NAME_AND_OUT_OF_STOCK.apply(recipe.getResult()));
         }
 
-        editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(this.getCurrentStock(recipe.getResult(), true)).create(this.messageSource)).applyTo(resultIcon);
+        editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(this.getCurrentStock(recipe.getResult(), true))).applyTo(this.trader, resultIcon);
         this.inventory.setItem(row * 9 + 5, resultIcon.getAmount() == 1 ? resultIcon : resultIcon.asOne());
         this.inventory.setItem(row * 9 + 6, resultIcon);
     }
 
-    private @NotNull ItemEditor<ItemMeta> createIngredientIcon(ItemStack ingredient, MerchantRecipe recipe, boolean adjustPrice) {
+    private @NotNull ItemEditor createIngredientIcon(ItemStack ingredient, MerchantRecipe recipe, boolean adjustPrice) {
         var editor = ItemEditor.create();
         editor.copyLoreFrom(ingredient);
 
@@ -160,14 +161,14 @@ public class MerchantRecipesGUI implements InventoryHolder {
             var adjusted = recipe.getAdjustedIngredient1();
 
             if (adjusted != null && originalPrice != adjusted.getAmount()) {
-                editor.loreLine(Languages.GUI_PRICE_DIFF.apply(ingredient.getAmount(), adjusted.getAmount()).create(this.messageSource));
+                editor.loreLine(Languages.GUI_PRICE_DIFF.apply(ingredient.getAmount(), adjusted.getAmount()));
                 ingredient.setAmount(adjusted.getAmount());
             }
         }
 
         int currentStock = this.getCurrentStock(ingredient, false);
         if (currentStock != -1) {
-            editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(currentStock).create(this.messageSource));
+            editor.loreLine(Languages.GUI_CURRENT_STOCK.apply(currentStock));
         }
 
         return editor;
@@ -244,7 +245,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
             if (Bukkit.isOwnedByCurrentRegion(villager)) {
                 tryStopTrading(villager);
             } else {
-                villager.getScheduler().run(JavaPlugin.getPlugin(BoxTradeStickPlugin.class), task -> tryStopTrading(), null);
+                villager.getScheduler().run(JavaPlugin.getPlugin(BoxTradeStickPlugin.class), _ -> tryStopTrading(), null);
             }
         }
     }
@@ -348,10 +349,9 @@ public class MerchantRecipesGUI implements InventoryHolder {
         private final ItemStack recipeSelected;
         private final ItemStack recipeNotSelected;
 
-        private CachedItems(@NotNull MiniMessageSource messageSource) {
-            var selectedLore = Languages.RECIPE_LORE.create(messageSource);
-            this.recipeSelected = ItemEditor.create().displayName(Languages.RECIPE_SELECTED.create(messageSource)).loreLines(selectedLore).createItem(Material.LIME_WOOL);
-            this.recipeNotSelected = ItemEditor.create().displayName(Languages.RECIPE_NOT_SELECTED.create(messageSource)).loreLines(selectedLore).createItem(Material.RED_STAINED_GLASS);
+        private CachedItems(Player viewer) {
+            this.recipeSelected = ItemEditor.create().displayName(Languages.RECIPE_SELECTED).loreLines(Languages.RECIPE_LORE).createItem(viewer, Material.LIME_WOOL);
+            this.recipeNotSelected = ItemEditor.create().displayName(Languages.RECIPE_NOT_SELECTED).loreLines(Languages.RECIPE_LORE).createItem(viewer, Material.RED_STAINED_GLASS);
         }
     }
 }
