@@ -140,7 +140,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
 
         int leftUses = recipe.getMaxUses() - recipe.getUses();
         if (0 < leftUses) {
-            resultIcon = recipe.getResult().asQuantity(Math.max(1, Math.min(leftUses, this.calcConsumedAmount(ingredients))));
+            resultIcon = recipe.getResult().asQuantity(Math.clamp(leftUses, 1, this.calcConsumedAmount(ingredients)));
             editor = ItemEditor.create().displayName(Languages.GUI_RESULT_BULK_TRADE.apply(resultIcon)).copyLoreFrom(resultIcon);
         } else {
             resultIcon = new ItemStack(Material.BARRIER);
@@ -270,7 +270,7 @@ public class MerchantRecipesGUI implements InventoryHolder {
     }
 
     private int getScroll(int maxScroll, @NotNull TradeStickData data) {
-        return Math.max(0, Math.min(maxScroll, data.getScroll(trader.getUniqueId())));
+        return Math.clamp(maxScroll, 0, data.getScroll(trader.getUniqueId()));
     }
 
     private boolean isSilentlyClosed() {
