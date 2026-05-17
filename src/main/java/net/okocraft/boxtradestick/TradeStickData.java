@@ -30,12 +30,12 @@ public class TradeStickData {
         return data != null ? data : new TradeStickData();
     }
 
-    private static final NamespacedKey ID_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:user"));
-    private static final NamespacedKey VALUE_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:value"));
+    private static final NamespacedKey ID_KEY = new NamespacedKey("boxtradestick", "user");
+    private static final NamespacedKey VALUE_KEY = new NamespacedKey("boxtradestick", "value");
 
     /* === Backward Compatibility === */
-    private static final NamespacedKey OFFER_NUMBER_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:offer_number"));
-    private static final NamespacedKey SCROLL_KEY = Objects.requireNonNull(NamespacedKey.fromString("boxtradestick:scroll"));
+    private static final NamespacedKey OFFER_NUMBER_KEY = new NamespacedKey("boxtradestick", "offer_number");
+    private static final NamespacedKey SCROLL_KEY = new NamespacedKey("boxtradestick", "scroll");
 
     private static final int SHIFTS_FOR_SCROLL = Integer.SIZE - 5;
     private static final int MASK_TO_CLEAR_SCROLL = (1 << SHIFTS_FOR_SCROLL) - 1;
