@@ -1,12 +1,12 @@
 plugins {
     java
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.21"
+    alias(libs.plugins.paperweight.userdev)
 }
 
 group = "net.okocraft.boxtradestick"
 version = "1.7"
 
-val mcVersion = "1.21.11"
+val mcVersion = libs.versions.paper.get().replaceAfter(".build", "").removeSuffix(".build")
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
@@ -16,14 +16,14 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("$mcVersion-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle(libs.versions.paper.get())
 
-    compileOnly("net.okocraft.box:box-api:6.0.0-rc.3")
-    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.3")
-    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.3")
+    compileOnly("net.okocraft.box:box-api:6.0.0-rc.4")
+    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.4")
+    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.4")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
-    testRuntimeOnly("io.papermc.paper:paper-api:$mcVersion-R0.1-SNAPSHOT")
+    testRuntimeOnly("io.papermc.paper:paper-api:${libs.versions.paper.get()}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
