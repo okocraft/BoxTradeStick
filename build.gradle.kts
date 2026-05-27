@@ -22,7 +22,7 @@ dependencies {
     compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.4")
     compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.4")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.0")
     testRuntimeOnly("io.papermc.paper:paper-api:${libs.versions.paper.get()}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
