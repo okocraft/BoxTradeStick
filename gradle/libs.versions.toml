@@ -9,4 +9,4 @@ paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
 
 [plugins]
 
-paperweight-userdev = { id = "io.papermc.paperweight.userdev", version = "2.0.0-beta.21" }
+paperweight-userdev = { id = "io.papermc.paperweight.userdev", version = "2.0.0-beta.22" }
