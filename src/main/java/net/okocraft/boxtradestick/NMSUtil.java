@@ -1,9 +1,6 @@
 package net.okocraft.boxtradestick;
 
 import io.papermc.paper.event.player.PlayerPurchaseEvent;
-import net.minecraft.util.Mth;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.trading.MerchantOffer;
 import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.entity.CraftAbstractVillager;
@@ -52,7 +49,7 @@ public class NMSUtil {
         }
 
         if (abstractVillager instanceof CraftVillager villager) {
-            updateSpecialPrices(craftPlayer, villager);
+            villager.getHandle().updateSpecialPrices(craftPlayer.getHandle());
             villager.getHandle().setTradingPlayer(craftPlayer.getHandle());
         } else if (abstractVillager instanceof CraftWanderingTrader wanderingTrader) {
             wanderingTrader.getHandle().setTradingPlayer(craftPlayer.getHandle());
@@ -119,38 +116,6 @@ public class NMSUtil {
         if (villager instanceof CraftAbstractVillager craftAbstractVillager) {
             MerchantOffer minecraftMerchantOffer = CraftMerchantRecipe.fromBukkit(merchantOffer).toMinecraft();
             craftAbstractVillager.getHandle().processTrade(minecraftMerchantOffer, event);
-        }
-    }
-
-    // net.minecraft.world.entity.npc.villager.Villager#updateSpecialPrices
-    private static void updateSpecialPrices(CraftPlayer player, CraftVillager villager) {
-        var playerHandle = player.getHandle();
-        var villagerHandle = villager.getHandle();
-
-        int playerReputation = villagerHandle.getPlayerReputation(playerHandle);
-
-        if (playerReputation != 0) {
-            for (MerchantOffer merchantrecipe : villagerHandle.getOffers()) {
-                if (!merchantrecipe.ignoreDiscounts) {
-                    merchantrecipe.addToSpecialPriceDiff(-Mth.floor((float) playerReputation * merchantrecipe.getPriceMultiplier()));
-                }
-            }
-        }
-
-        MobEffectInstance mobeffect = playerHandle.getEffect(MobEffects.HERO_OF_THE_VILLAGE);
-
-        if (mobeffect == null) {
-            return;
-        }
-
-        int amplifier = mobeffect.getAmplifier();
-
-        for (MerchantOffer merchantrecipe1 : villagerHandle.getOffers()) {
-            if (merchantrecipe1.ignoreDiscounts) continue; // Paper
-            double d = 0.3D + 0.0625D * (double) amplifier;
-            int i = (int) Math.floor(d * (double) merchantrecipe1.getBaseCostA().getCount());
-
-            merchantrecipe1.addToSpecialPriceDiff(-Math.max(i, 1));
         }
     }
 
