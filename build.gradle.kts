@@ -18,9 +18,9 @@ repositories {
 dependencies {
     paperweight.paperDevBundle(libs.versions.paper.get())
 
-    compileOnly("net.okocraft.box:box-api:6.0.0-rc.4")
-    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.4")
-    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.4")
+    compileOnly("net.okocraft.box:box-api:6.0.0-rc.8")
+    compileOnly("net.okocraft.box:box-gui-feature:6.0.0-rc.8")
+    compileOnly("net.okocraft.box:box-stick-feature:6.0.0-rc.8")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
     testRuntimeOnly("io.papermc.paper:paper-api:${libs.versions.paper.get()}")
